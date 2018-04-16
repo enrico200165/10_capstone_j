@@ -1,17 +1,39 @@
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
+import java.nio.file.Files;
 
 public class readTextFile {
+
+    static String findDir(String origDir) {
+        while ( !(new File((origDir)).exists() && (new File((origDir)).isDirectory()) )
+                && origDir.length() >= 4) {
+            if (origDir.startsWith("..\\")) {
+                origDir = origDir.substring(3,origDir.length());
+            } else {
+                return null;
+            }
+        }
+        return origDir;
+    }
+
+
     public static void main(String[] args){
 
-        try {
-            File fileDir = new File("V:\\data\\pers_dev\\data_dev\\capstone_data\\data_in\\corpus\\en_US.news_full_1_1.txt");
+        String corpusDir = "..\\..\\..\\..\\..\\data_dev\\capstone_data\\data_in\\corpus";
+        String fname = "en_US.news_full_1_1.txt";
+        String fpath = null;
+        if ((corpusDir = findDir(corpusDir)) == null) {
+            System.out.println("directory not found");
+            return;
+        } else {
+            fpath = corpusDir+"\\"+fname;
+        }
 
-            BufferedReader in = new BufferedReader(
+
+        File fileDir = null;
+        BufferedReader in = null;
+        try {
+            fileDir = new File(fpath);
+           in = new BufferedReader(
                     new InputStreamReader(
                             new FileInputStream(fileDir), "UTF8"));
             String str;
@@ -21,26 +43,21 @@ public class readTextFile {
                 i++;
                 if (str.length() > maxlung ) {
                     maxlung = str.length();
-                    System.out.println("nex max length: "+ maxlung);
-                    if (str.length() > 8)
-                        System.out.println(str.substring(0,7));
-                    System.out.println("line "+i+" len "+str.length());
+                    if (str.length() > 1024) {
+                        System.out.println("line " + i + " len " + str.length()+" "+str.substring(0, 32)+"...");
+                    }
                 }
             }
             in.close();
             System.out.println("read nr lines: "+i+ " max len "+ maxlung);
-        }
-        catch (UnsupportedEncodingException e)
-        {
+        } catch (UnsupportedEncodingException e) {
             System.out.println(e.getMessage());
-        }
-        catch (IOException e)
-        {
+        }  catch (IOException e) {
             System.out.println(e.getMessage());
-        }
-        catch (Exception e)
-        {
+        }  catch (Exception e)  {
             System.out.println(e.getMessage());
+        } finally {
+            try {  in.close(); } catch(Exception e) {}
         }
     }
 }
