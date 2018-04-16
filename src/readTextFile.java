@@ -2,8 +2,7 @@ import java.awt.event.KeyEvent;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class readTextFile {
 
@@ -11,7 +10,7 @@ public class readTextFile {
 
 
     // https://stackoverflow.com/questions/220547/printable-char-in-java
-    public boolean isPrintableChar( char c ) {
+    static public boolean isPrintableChar( char c ) {
         Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
         return (!Character.isISOControl(c)) &&
                 c != KeyEvent.CHAR_UNDEFINED &&
@@ -19,15 +18,23 @@ public class readTextFile {
                 block != Character.UnicodeBlock.SPECIALS;
     }
 
-    static boolean hasNonPrintableChar(String s, long lineNum) {
+    static boolean hasNonPrintableChar(String s, long lineNum, Map<Integer,Integer> charsFound) {
+        boolean found = false;
         for (int i = 0; i < s.length(); i++){
             char c = s.charAt(i);
             if (!isPrintableChar(c)) {
-                System.out.println("line: "+lineNum+ " col: "+i +" non printable char, code: "+(integer)(c) );
-                return true;
+                found = true;
+                int charCode = (int)(c);
+                // System.out.println("line: "+lineNum+ " col: "+i +" non printable char, code: "+charCode);
+                java.lang.Object val;
+                if ( ( val = charsFound.get(charCode)) != null) {
+                    charsFound.put(charCode, (int)val+1);
+                } else {
+                    charsFound.put(charCode,1);
+                }
             }
         }
-        return false;
+        return found;
     }
 
 
@@ -48,11 +55,21 @@ public class readTextFile {
             in = new BufferedReader(new InputStreamReader(new FileInputStream(fileDir), "UTF8"));
             String str;
             long i = 1;
+            int linesWithNonPrint = 0;
+            TreeMap<Integer,Integer> charsFound = new TreeMap<>();
             while ((str = in.readLine()) != null) {
                 i++;
-                hasNonPrintableChar(str,i);
+                if (hasNonPrintableChar(str,i,charsFound))
+                    linesWithNonPrint++;
             }
-            System.out.println("read nr lines: " + i + " max len " + maxlung);
+            System.out.println("read nr lines: " + i);
+
+            Iterator it = charsFound.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry pair = (Map.Entry) it.next();
+                System.out.println("char code: " + pair.getKey()+ " " + String.format("0x%04X", pair.getKey())
+                        + " occurrences " + pair.getValue());
+            }
         } catch (UnsupportedEncodingException e) {
             System.out.println(e.getMessage());
         } catch (IOException e) {
@@ -62,39 +79,10 @@ public class readTextFile {
         } finally {
             try {
                 in.close();
-                writer.close();
             } catch (Exception e) {
             }
         }
     }
-
-
-
-    static List<String> splitLineIfTooLong(String line, int maxLength) {
-        List<String> lines = new ArrayList<String>();
-
-        String[] fragments = line.split("\\.\\r*\\n");
-
-        if (fragments.length > 1) {
-            System.out.println("breakpoint debug");
-        }
-
-        for (String frag : fragments) {
-            while (frag.length() > maxLength) {
-                String detach = frag.substring(0, maxLength - 1);
-                if (!detach.endsWith(System.lineSeparator()))
-                    detach += System.lineSeparator();
-                lines.add(detach);
-                frag = frag.substring(maxLength, frag.length());
-            }
-            if (!frag.endsWith(System.lineSeparator()))
-                frag += System.lineSeparator();
-            lines.add(frag);
-        }
-        return lines;
-    }
-
-
 
     static String findDir(String origDir) {
         while (!(new File((origDir)).exists() && (new File((origDir)).isDirectory()))
