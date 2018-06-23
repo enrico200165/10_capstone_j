@@ -1,7 +1,20 @@
-import java.awt.event.KeyEvent;
+import org.apache.log4j.Logger;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+
+
+class CharCP {
+    public CharCP(char c,int cp) { this.c = c; this.cp = cp; this.offset = -1;}
+    public CharCP(char c,int cp, int offset) { this.c = c; this.cp = cp; this.offset = offset;}
+    public char c;
+    public int cp;
+    public boolean cp_patched = false;
+    public boolean char_patched = false;
+    int offset;
+}
+
 
 public class readTextFile {
 
@@ -9,7 +22,7 @@ public class readTextFile {
 
 
     // --------------------------------------------------------------
-    static String findDir(String origDir) {
+    private static String findDir(String origDir) {
     // --------------------------------------------------------------
         while (!(new File((origDir)).exists() && (new File((origDir)).isDirectory()))
                 && origDir.length() >= 4) {
@@ -24,16 +37,18 @@ public class readTextFile {
 
 
     // --------------------------------------------------------------
-    static public boolean isCharUndesirable(char c ) {
+    static public boolean isCodePointUndesirable(int cp ) {
     // --------------------------------------------------------------
     // https://stackoverflow.com/questions/220547/printable-char-in-java
         boolean ret = false;
 
-        if ((int)c == 65533)
-            return true;
+        switch (cp) {
+            case 65533: ret = true; break;
+            default:
+                break;
+        }
 
-        int codePoint =  (""+c).codePointAt(0);  // c.codePointAt(""+c);
-        switch (Character.getType(codePoint)) {
+        switch (Character.getType(cp)) {
             case Character.CONTROL:     // \p{Cc}
             case Character.FORMAT:      // \p{Cf}
             case Character.PRIVATE_USE: // \p{Co}
@@ -46,9 +61,62 @@ public class readTextFile {
                 break;
         }
 
+        return ret;
+    }
+
+
+    // --------------------------------------------------------------
+    static public CharCP replaceCharCP(char c, int cp) {
+        // ----------------------------------------------------------
+
+        CharCP ccp = new CharCP(c,cp);
+        ccp.char_patched = true;
+        ccp.cp_patched = true;
+
+        // java.lang.Character.toChars(int codePoint)
+
+        switch (cp) {
+            // case : {  ;ccp.patched = true; break;}
+            case 8211:
+            case 8212:
+                {  ccp.cp = (int)'-';
+                ccp.char_patched= true; break;}
+            default:
+                ccp.cp_patched = false;
+                break;
+        }
+        if (ccp.cp_patched) {
+            ccp.c = (char) ccp.cp;
+            return ccp;
+        }
+
+
+
+        switch (c) {
+            // case : { ccp.char = '' ;ccp.char_patched = true; break;}
+            case 'ø': { ccp.c = '|' ; ccp.char_patched = true; break;}
+            default: {
+                ccp.char_patched = false;
+                break;
+            }
+        }
+        if (ccp.char_patched) {
+            ccp.cp = (int) ccp.c;
+            return ccp;
+        }
+
+        return ccp;
+    }
+
+
+
+
+    static public boolean isCharUndesirable(char c) {
+        boolean ret = false;
         Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
-        ret = ret || Character.isISOControl(c) || c == KeyEvent.CHAR_UNDEFINED ||
-                (block != null && block == Character.UnicodeBlock.SPECIALS);
+
+        ret = ret || (block == Character.UnicodeBlock.SPECIALS);
+
         return ret;
     }
 
@@ -60,15 +128,69 @@ public class readTextFile {
     // replaceAll("\\p{C}", "?");
     // A non-regex approach is the only way I know to properly handle \p{C}:
 
-        StringBuilder newString = new StringBuilder(myString.length());
+        int len = myString.length();
+        StringBuilder newString = new StringBuilder(len);
         for (int offset = 0; offset < myString.length(); ) {
-            int codePoint = myString.codePointAt(offset);
-            offset += Character.charCount(codePoint);
 
-            if (isCharUndesirable((char)codePoint))
+            // don't change in a hurry 3 lines below
+            int cp = myString.codePointAt(offset);
+            offset += Character.charCount(cp);
+            char c = (char)cp;
+            char c2 = (Character.toChars(cp))[0];
+            String charStr = "";
+            if (c == c2) {
+                charStr = ""+c;
+            } else {
+                log.error("errore interno");
+                System.exit(99);
+            }
+
+
+            // is it surely OK?
+            if (charStr.matches("[\\w]"))  {
+                newString.append(Character.toChars(cp));
                 continue;
-            else
-                newString.append(Character.toChars(codePoint));
+            }
+            if (charStr.matches("[ .,:;!?#(){}\\[\\]'`‘\"]"))  {
+                newString.append(Character.toChars(cp));
+                continue;
+            }
+            //operations and currency
+            if (charStr.matches("[+=_\\^$|£$%&/§@°]")
+                    || c == '-' || c == '*')  {
+                newString.append(Character.toChars(cp));
+                continue;
+            }
+            // quotations
+            if (charStr.matches("[’”“]"))  {
+                newString.append(Character.toChars(cp));
+                continue;
+            }
+
+
+            // --- replace strange with similar normal
+            CharCP ccp = replaceCharCP(c,cp);
+            if (ccp.char_patched || ccp.cp_patched) {
+                c = ccp.c;
+                cp = ccp.cp;
+                newString.append(Character.toChars(cp));
+                continue;
+            }
+
+            log.info("non trivial char: '"+c+"' "+" codepoint: "+cp);
+
+
+            if (isCodePointUndesirable(cp) )  {
+                log.debug("");
+                continue;
+            }
+            if (isCharUndesirable(c) )  {
+                log.debug("");
+                continue;
+            }
+
+
+            newString.append(Character.toChars(cp));
 /*
             // Replace invisible control characters and unused code points
             switch (Character.getType(codePoint)) {
@@ -99,7 +221,7 @@ public class readTextFile {
             if (!isCharUndesirable(c)) {
                 found = true;
                 int charCode = (int)(c);
-                // System.out.println("line: "+lineNum+ " col: "+i +" non printable char, code: "+charCode);
+                // log.info("line: "+lineNum+ " col: "+i +" non printable char, code: "+charCode);
                 java.lang.Object val;
                 if ( ( val = charsFound.get(charCode)) != null) {
                     charsFound.put(charCode, (int)val+1);
@@ -120,7 +242,7 @@ public class readTextFile {
         String[] fragments = line.split("\\.\\r*\\n");
 
         if (fragments.length > 1) {
-            System.out.println("breakpoint debug");
+            log.debug("breakpoint debug");
         }
 
         for (String frag : fragments) {
@@ -144,7 +266,7 @@ public class readTextFile {
     // --------------------------------------------------------------
         String fpath = null;
         if ((corpusDir = findDir(corpusDir)) == null) {
-            System.out.println("directory not found");
+            log.error("directory not found");
             return;
         } else {
             fpath = corpusDir + "\\" + fname;
@@ -164,20 +286,20 @@ public class readTextFile {
                 if (hasNonPrintableChar(str,i,charsFound))
                     linesWithNonPrint++;
             }
-            System.out.println("read nr lines: " + i);
+            log.info("read nr lines: " + i);
 
             Iterator it = charsFound.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry pair = (Map.Entry) it.next();
-                System.out.println("char code: " + pair.getKey()+ " " + String.format("0x%04X", pair.getKey())
-                        + " occurrences " + pair.getValue());
+                log.info("char code: " + pair.getKey()+ " " + String.format("0x%04X", pair.getKey())
+                        +  "'"+pair.getValue() +  "'" + " occurrences " + pair.getValue());
             }
         } catch (UnsupportedEncodingException e) {
-            System.out.println(e.getMessage());
+            log.error(e);
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            log.error(e);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            log.error(e.getMessage());
         } finally {
             try {
                 in.close();
@@ -191,7 +313,7 @@ public class readTextFile {
     // --------------------------------------------------------------
         String fpath = null;
         if ((corpusDir = findDir(corpusDir)) == null) {
-            System.out.println("directory not found");
+            log.error("directory not found");
             return;
         } else {
             fpath = corpusDir + "\\" + fname;
@@ -212,7 +334,7 @@ public class readTextFile {
                 if (str.length() > maxlung) {
                     maxlung = str.length();
                     if (str.length() > 1024) {
-                        System.out.println("line " + i + " len " + str.length() + " " + str.substring(0, 32) + "...");
+                        log.error("line " + i + " len " + str.length() + " " + str.substring(0, 32) + "...");
                     }
                 }
                 List<String> lines = splitLineIfTooLong(str, 1022);
@@ -223,13 +345,13 @@ public class readTextFile {
                     writer.write(line);
                 }
             }
-            System.out.println("read nr lines: " + i + " max len " + maxlung);
+            log.error("read nr lines: " + i + " max len " + maxlung);
         } catch (UnsupportedEncodingException e) {
-            System.out.println(e.getMessage());
+            log.error(e);
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            log.error(e);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            log.error(e);
         } finally {
             try {
                 in.close();
@@ -246,7 +368,7 @@ public class readTextFile {
         String fpath = null;
         String fpathOut = null;
         if ((corpusDir = findDir(corpusDir)) == null) {
-            System.out.println("directory not found");
+            log.error("directory not found");
             return;
         } else {
             fpath = corpusDir + "\\" + fname;
@@ -269,20 +391,20 @@ public class readTextFile {
                 if (str.length() > maxlung) {
                     maxlung = str.length();
                     if (str.length() > 1024) {
-                        System.out.println("line " + i + " len " + str.length() + " " + str.substring(0, 32) + "...");
+                        log.info("new max length: line " + i + " len " + str.length() + " " + str.substring(0, 32) + "...");
                     }
                 }
 
                 String line = replaceNonPrintable(str);
                 writer.write(line+ System.lineSeparator());
             }
-            System.out.println("read nr lines: " + i + " max len " + maxlung);
+            log.error("read nr lines: " + i + " max len " + maxlung);
         } catch (UnsupportedEncodingException e) {
-            System.out.println(e.getMessage());
+            log.error(e.getMessage());
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            log.error(e.getMessage());
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            log.error(e.getMessage());
         } finally {
             try {
                 in.close();
@@ -298,7 +420,7 @@ public class readTextFile {
     // --------------------------------------------------------------
         String fpath = null;
         if ((corpusDir = findDir(corpusDir)) == null) {
-            System.out.println("directory not found");
+            log.error("directory not found");
             return;
         } else {
             fpath = corpusDir + "\\" + fname;
@@ -319,7 +441,7 @@ public class readTextFile {
                 if (str.length() > maxlung) {
                     maxlung = str.length();
                     if (str.length() > 1024) {
-                        System.out.println("line " + i + " len " + str.length() + " " + str.substring(0, 32) + "...");
+                        log.error("line " + i + " len " + str.length() + " " + str.substring(0, 32) + "...");
                     }
                 }
                 if (str.length() > 1022) {
@@ -328,13 +450,13 @@ public class readTextFile {
                     writer.write(str);
                 }
             }
-            System.out.println("read nr lines: " + i + " max len " + maxlung);
+            log.error("read nr lines: " + i + " max len " + maxlung);
         } catch (UnsupportedEncodingException e) {
-            System.out.println(e.getMessage());
+            log.error(e.getMessage());
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            log.error(e.getMessage());
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            log.error(e.getMessage());
         } finally {
             try {
                 in.close();
@@ -355,5 +477,7 @@ public class readTextFile {
         //breakLines();
         //longLines();
     }
-}
 
+    final static Logger log = Logger.getLogger(readTextFile.class);
+
+}
