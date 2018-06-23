@@ -36,34 +36,6 @@ public class readTextFile {
     }
 
 
-    // --------------------------------------------------------------
-    static public boolean isCodePointUndesirable(int cp ) {
-    // --------------------------------------------------------------
-    // https://stackoverflow.com/questions/220547/printable-char-in-java
-        boolean ret = false;
-
-        switch (cp) {
-            case 65533: ret = true; break;
-            default:
-                break;
-        }
-
-        switch (Character.getType(cp)) {
-            case Character.CONTROL:     // \p{Cc}
-            case Character.FORMAT:      // \p{Cf}
-            case Character.PRIVATE_USE: // \p{Co}
-            case Character.SURROGATE:   // \p{Cs}
-            case Character.UNASSIGNED:  // \p{Cn}
-                ret = true;
-                return true;
-                //break;
-            default:
-                break;
-        }
-
-        return ret;
-    }
-
 
     // --------------------------------------------------------------
     static public CharCP replaceCharCP(char c, int cp) {
@@ -76,11 +48,27 @@ public class readTextFile {
         // java.lang.Character.toChars(int codePoint)
 
         switch (cp) {
+            // map to Blank
+            case 174:
+            case 183:
+            case 8226:
+            case 8230:
+            case 9632:
+            case 9670:
+            case 9679:
+                { ccp.cp = (int)' '; ccp.char_patched = true; break;}
             // case : {  ;ccp.patched = true; break;}
+            // case : {  ;ccp.patched = true; break;}
+
+
             case 8211:
-            case 8212:
-                {  ccp.cp = (int)'-';
-                ccp.char_patched= true; break;}
+            case 8212: { ccp.cp = (int)'-'; ccp.char_patched= true; break;}
+            case 6529: { ccp.cp = (int)','; ccp.char_patched = true; break;}
+            case 8260: { ccp.cp = (int)'/'; ccp.char_patched = true; break;} // ⁄
+            case 8730: { ccp.cp = (int)'√'; ccp.char_patched = true; break;}
+            //case : { ccp.cp = (int)''; ccp.char_patched = true; break;}
+            //case : { ccp.cp = (int)''; ccp.char_patched = true; break;}
+            //case : { ccp.cp = (int)''; ccp.char_patched = true; break;}
             default:
                 ccp.cp_patched = false;
                 break;
@@ -109,24 +97,70 @@ public class readTextFile {
     }
 
 
+    // --------------------------------------------------------------
+    static public boolean ignoreCharCP(char c, int cp) {
 
-
-    static public boolean isCharUndesirable(char c) {
         boolean ret = false;
-        Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
 
-        ret = ret || (block == Character.UnicodeBlock.SPECIALS);
+        switch (cp) {
+            // case : {  ;ccp.patched = true; break;}
+            default:
+                break;
+        }
 
+
+
+        switch (c) {
+            // case 'ø': { ccp.c = '|' ; ccp.char_patched = true; break;}
+            default: {
+                break;
+            }
+        }
         return ret;
     }
 
 
+
     // --------------------------------------------------------------
-    static String replaceNonPrintable(String myString) {
+    static public boolean isCharToRemove(char c, int cp ) {
+        // https://stackoverflow.com/questions/220547/printable-char-in-java
+
+        switch (cp) {
+            case 65533: return true;
+            default:  break;
+        }
+
+
+        Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
+        if ( false
+                || block == Character.UnicodeBlock.SPECIALS) {
+            return true;
+        }
+
+
+        switch (Character.getType(cp)) {
+            case Character.CONTROL:     // \p{Cc}
+            case Character.FORMAT:      // \p{Cf}
+            case Character.PRIVATE_USE: // \p{Co}
+            case Character.SURROGATE:   // \p{Cs}
+            case Character.UNASSIGNED:  // \p{Cn}
+                return true;
+            default:
+                break;
+        }
+
+        return false;
+    }
+
+
+
+    // --------------------------------------------------------------
+    static String replaceProblematicChars(String myString, Map<Integer,Integer> unsualCharsFound) {
     // --------------------------------------------------------------
     // https://stackoverflow.com/questions/6198986/how-can-i-replace-non-printable-unicode-characters-in-java
     // replaceAll("\\p{C}", "?");
     // A non-regex approach is the only way I know to properly handle \p{C}:
+
 
         int len = myString.length();
         StringBuilder newString = new StringBuilder(len);
@@ -147,28 +181,22 @@ public class readTextFile {
 
 
             // is it surely OK?
-            if (charStr.matches("[\\w]"))  {
+            if ( cp <= 255 ) {
                 newString.append(Character.toChars(cp));
                 continue;
             }
-            if (charStr.matches("[ .,:;!?#(){}\\[\\]'`‘\"]"))  {
-                newString.append(Character.toChars(cp));
-                continue;
-            }
-            //operations and currency
-            if (charStr.matches("[+=_\\^$|£$%&/§@°]")
-                    || c == '-' || c == '*')  {
-                newString.append(Character.toChars(cp));
-                continue;
-            }
-            // quotations
-            if (charStr.matches("[’”“]"))  {
+            if ( false
+                    || charStr.matches("[\\w]")
+                    || charStr.matches("[ .,:;!?#(){}\\[\\]'`‘\"]")
+                    || charStr.matches("[+=¼_\\^$|£€$%&/§@°~»]") //math and currency
+                    || charStr.matches("[’”“]") // quotations
+                    )  {
                 newString.append(Character.toChars(cp));
                 continue;
             }
 
 
-            // --- replace strange with similar normal
+            // --- replace strange chars with similar OK ones
             CharCP ccp = replaceCharCP(c,cp);
             if (ccp.char_patched || ccp.cp_patched) {
                 c = ccp.c;
@@ -177,36 +205,21 @@ public class readTextFile {
                 continue;
             }
 
-            log.info("non trivial char: '"+c+"' "+" codepoint: "+cp);
 
-
-            if (isCodePointUndesirable(cp) )  {
-                log.debug("");
-                continue;
-            }
-            if (isCharUndesirable(c) )  {
+            if (isCharToRemove(c,cp) )  {
                 log.debug("");
                 continue;
             }
 
 
+            java.lang.Object val;
+            if ( ( val = unsualCharsFound.get(cp)) != null) {
+                unsualCharsFound.put(cp, (int)val+1);
+            } else {
+                unsualCharsFound.put(cp,1);
+            }
+            // log.debug("non trivial char: '"+c+"' "+" codepoint: "+cp);
             newString.append(Character.toChars(cp));
-/*
-            // Replace invisible control characters and unused code points
-            switch (Character.getType(codePoint)) {
-                case Character.CONTROL:     // \p{Cc}
-                case Character.FORMAT:      // \p{Cf}
-                case Character.PRIVATE_USE: // \p{Co}
-                case Character.SURROGATE:   // \p{Cs}
-                case Character.UNASSIGNED:  // \p{Cn}
-                    //newString.append('?');
-                   //  newString.append(' ');
-                    break;
-                default:
-                    newString.append(Character.toChars(codePoint));
-                    break;
-            }
-*/
         }
         return newString.toString();
     }
@@ -214,11 +227,11 @@ public class readTextFile {
 
     // --------------------------------------------------------------
     static boolean hasNonPrintableChar(String s, long lineNum, Map<Integer,Integer> charsFound) {
-    // --------------------------------------------------------------
+        // --------------------------------------------------------------
         boolean found = false;
         for (int i = 0; i < s.length(); i++){
             char c = s.charAt(i);
-            if (!isCharUndesirable(c)) {
+            if (!isCharToRemove(c,(int)c)) {
                 found = true;
                 int charCode = (int)(c);
                 // log.info("line: "+lineNum+ " col: "+i +" non printable char, code: "+charCode);
@@ -262,7 +275,7 @@ public class readTextFile {
 
 
     // --------------------------------------------------------------
-    public static void findNonPrintables(String fname ) {
+    public static void findNonPrintables(String fname,Map<Integer,Integer> unsualCharsFound) {
     // --------------------------------------------------------------
         String fpath = null;
         if ((corpusDir = findDir(corpusDir)) == null) {
@@ -280,15 +293,15 @@ public class readTextFile {
             String str;
             long i = 1;
             int linesWithNonPrint = 0;
-            TreeMap<Integer,Integer> charsFound = new TreeMap<>();
+            unsualCharsFound.clear();
             while ((str = in.readLine()) != null) {
                 i++;
-                if (hasNonPrintableChar(str,i,charsFound))
+                if (hasNonPrintableChar(str,i,unsualCharsFound))
                     linesWithNonPrint++;
             }
             log.info("read nr lines: " + i);
 
-            Iterator it = charsFound.entrySet().iterator();
+            Iterator it = unsualCharsFound.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry pair = (Map.Entry) it.next();
                 log.info("char code: " + pair.getKey()+ " " + String.format("0x%04X", pair.getKey())
@@ -308,9 +321,9 @@ public class readTextFile {
         }
     }
 
+
     // --------------------------------------------------------------
     public static void breakLines(String fname ) {
-    // --------------------------------------------------------------
         String fpath = null;
         if ((corpusDir = findDir(corpusDir)) == null) {
             log.error("directory not found");
@@ -363,7 +376,7 @@ public class readTextFile {
 
 
     // --------------------------------------------------------------
-    public static void writePrintables(String fname, String fnameOut) {
+    public static void writePrintables(String fname, String fnameOut, Map<Integer,Integer> unsualCharsFound) {
     // --------------------------------------------------------------
         String fpath = null;
         String fpathOut = null;
@@ -378,6 +391,7 @@ public class readTextFile {
         OutputStreamWriter writer = null;
         File fileDir = null;
         BufferedReader in = null;
+        unsualCharsFound.clear();
         try {
             writer = new OutputStreamWriter(new FileOutputStream(fpathOut), StandardCharsets.UTF_8);
             fileDir = new File(fpath);
@@ -395,10 +409,10 @@ public class readTextFile {
                     }
                 }
 
-                String line = replaceNonPrintable(str);
+                String line = replaceProblematicChars(str,unsualCharsFound);
                 writer.write(line+ System.lineSeparator());
             }
-            log.error("read nr lines: " + i + " max len " + maxlung);
+            log.info("read nr lines: " + i + " max len " + maxlung);
         } catch (UnsupportedEncodingException e) {
             log.error(e.getMessage());
         } catch (IOException e) {
@@ -472,11 +486,26 @@ public class readTextFile {
 
         String fname = "en_US.news_full_1_1.txt";
         String fnameClean = fname+".clean.txt";
-        writePrintables(fname, fnameClean);
-        findNonPrintables(fnameClean);
+        writePrintables(fname, fnameClean,unsualCharsFound);
+        dumpUnusual(unsualCharsFound);
+        //findNonPrintables(fnameClean);
         //breakLines();
         //longLines();
     }
+
+
+    public static void dumpUnusual(Map<Integer,Integer> unsualCharsFound) {
+
+        Iterator it = unsualCharsFound.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry pair = (Map.Entry) it.next();
+            log.info("char code: " + pair.getKey()+ " " + String.format("0x%04X", pair.getKey())
+                    +  " '"+(char)(int)pair.getKey() +  "' " + " occurrences " + pair.getValue());
+        }
+
+    }
+
+    static TreeMap<Integer,Integer> unsualCharsFound = new TreeMap<Integer,Integer>();
 
     final static Logger log = Logger.getLogger(readTextFile.class);
 
