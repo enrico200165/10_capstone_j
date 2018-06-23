@@ -376,15 +376,16 @@ public class readTextFile {
 
 
     // --------------------------------------------------------------
-    public static void writePrintables(String fname, String fnameOut, Map<Integer,Integer> unsualCharsFound) {
+    public static void writePrintables(String fname, String fnameOut
+            , Map<Integer,Integer> unsualCharsFound) {
     // --------------------------------------------------------------
-        String fpath = null;
+        String fpathIn = null;
         String fpathOut = null;
         if ((corpusDir = findDir(corpusDir)) == null) {
             log.error("directory not found");
             return;
         } else {
-            fpath = corpusDir + "\\" + fname;
+            fpathIn = corpusDir + "\\" + fname;
             fpathOut  = corpusDir + "\\" + fnameOut;
         }
 
@@ -392,9 +393,10 @@ public class readTextFile {
         File fileDir = null;
         BufferedReader in = null;
         unsualCharsFound.clear();
+        log.info("input file:"+fpathIn);
         try {
             writer = new OutputStreamWriter(new FileOutputStream(fpathOut), StandardCharsets.UTF_8);
-            fileDir = new File(fpath);
+            fileDir = new File(fpathIn);
             in = new BufferedReader(new InputStreamReader(new FileInputStream(fileDir), "UTF8"));
             String str;
             int maxlung = 0;
@@ -423,6 +425,8 @@ public class readTextFile {
             try {
                 in.close();
                 writer.close();
+                log.info("\noutput file: "+fpathIn
+                      +"\ninput was:   "+fpathIn);
             } catch (Exception e) {
             }
         }
@@ -480,19 +484,6 @@ public class readTextFile {
         }
     }
 
-    // --------------------------------------------------------------
-    public static void main(String[] args) {
-    // --------------------------------------------------------------
-
-        String fname = "en_US.news_full_1_1.txt";
-        String fnameClean = fname+".clean.txt";
-        writePrintables(fname, fnameClean,unsualCharsFound);
-        dumpUnusual(unsualCharsFound);
-        //findNonPrintables(fnameClean);
-        //breakLines();
-        //longLines();
-    }
-
 
     public static void dumpUnusual(Map<Integer,Integer> unsualCharsFound) {
 
@@ -504,6 +495,23 @@ public class readTextFile {
         }
 
     }
+
+
+    // --------------------------------------------------------------
+    public static void main(String[] args) {
+    // --------------------------------------------------------------
+
+        String fname = "en_US.news_full_1_1.txt";
+        String fnameClean = fname+".clean.txt";
+        writePrintables(fname, fnameClean,unsualCharsFound);
+        writePrintables(fnameClean, fnameClean+"2_txt",unsualCharsFound);
+        dumpUnusual(unsualCharsFound);
+        //findNonPrintables(fnameClean);
+        //breakLines();
+        //longLines();
+    }
+
+
 
     static TreeMap<Integer,Integer> unsualCharsFound = new TreeMap<Integer,Integer>();
 
