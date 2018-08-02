@@ -5,20 +5,28 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 
+/**
+ * WHole approach quickly copied and adjusted from internet, this class is a service
+ * class, not examined yet logic behind it
+ */
 class CharCP {
+
     public CharCP(char c,int cp) { this.c = c; this.cp = cp; this.offset = -1;}
     public CharCP(char c,int cp, int offset) { this.c = c; this.cp = cp; this.offset = offset;}
+
     public char c;
     public int cp;
-    public boolean cp_patched = false;
-    public boolean char_patched = false;
+    public boolean patched = false;
+
     int offset;
 }
 
 
+
 public class readTextFile {
 
-    static  String corpusDir = "..\\..\\..\\..\\..\\data_dev\\capstone_data\\data_in\\corpus";
+    static  String corpusDir = "..\\..\\..\\..\\..\\data_dev\\capstone_data\\data_in\\corpus_subset";
+    //static  String corpusDir = "..\\..\\..\\..\\..\\data_dev\\capstone_data\\data_in\\corpus_full";
 
 
     // --------------------------------------------------------------
@@ -36,17 +44,13 @@ public class readTextFile {
     }
 
 
-
-    // --------------------------------------------------------------
+    /* Replace unsual characters
+    * */
     static public CharCP replaceCharCP(char c, int cp) {
-        // ----------------------------------------------------------
 
         CharCP ccp = new CharCP(c,cp);
-        ccp.char_patched = true;
-        ccp.cp_patched = true;
 
-        // java.lang.Character.toChars(int codePoint)
-
+        // by codepoint
         switch (cp) {
             // map to Blank
             case 174:
@@ -55,44 +59,23 @@ public class readTextFile {
             case 8230:
             case 9632:
             case 9670:
-            case 9679:
-                { ccp.cp = (int)' '; ccp.char_patched = true; break;}
-            // case : {  ;ccp.patched = true; break;}
-            // case : {  ;ccp.patched = true; break;}
-
-
+            case 9679: { ccp.cp = (int)' '; ccp.c = (char)ccp.cp; return ccp; }
             case 8211:
-            case 8212: { ccp.cp = (int)'-'; ccp.char_patched= true; break;}
-            case 6529: { ccp.cp = (int)','; ccp.char_patched = true; break;}
-            case 8260: { ccp.cp = (int)'/'; ccp.char_patched = true; break;} // ⁄
-            case 8730: { ccp.cp = (int)'√'; ccp.char_patched = true; break;}
-            //case : { ccp.cp = (int)''; ccp.char_patched = true; break;}
-            //case : { ccp.cp = (int)''; ccp.char_patched = true; break;}
-            //case : { ccp.cp = (int)''; ccp.char_patched = true; break;}
-            default:
-                ccp.cp_patched = false;
-                break;
-        }
-        if (ccp.cp_patched) {
-            ccp.c = (char) ccp.cp;
-            return ccp;
+            case 8212: { ccp.cp = (int)'-'; ccp.c = (char)ccp.cp; return ccp; }
+            case 6529: { ccp.cp = (int)','; ccp.c = (char)ccp.cp; return ccp; }
+            case 8260: { ccp.cp = (int)'/'; ccp.c = (char)ccp.cp; return ccp; }
+            case 8730: { ccp.cp = (int)'√'; ccp.c = (char)ccp.cp; return ccp; }
+            default:   { break;  }
         }
 
 
-
+        // by character
         switch (c) {
-            // case : { ccp.char = '' ;ccp.char_patched = true; break;}
-            case 'ø': { ccp.c = '|' ; ccp.char_patched = true; break;}
-            default: {
-                ccp.char_patched = false;
-                break;
-            }
-        }
-        if (ccp.char_patched) {
-            ccp.cp = (int) ccp.c;
-            return ccp;
+            case 'ø': { ccp.c = '|' ; ccp.cp = (int) ccp.c; return ccp;}
+            default: { break; }
         }
 
+        ccp.patched = false;
         return ccp;
     }
 
@@ -104,17 +87,14 @@ public class readTextFile {
 
         switch (cp) {
             // case : {  ;ccp.patched = true; break;}
-            default:
-                break;
+            default: { break; }
         }
 
 
 
         switch (c) {
             // case 'ø': { ccp.c = '|' ; ccp.char_patched = true; break;}
-            default: {
-                break;
-            }
+            default: { break; }
         }
         return ret;
     }
@@ -143,10 +123,10 @@ public class readTextFile {
             case Character.FORMAT:      // \p{Cf}
             case Character.PRIVATE_USE: // \p{Co}
             case Character.SURROGATE:   // \p{Cs}
-            case Character.UNASSIGNED:  // \p{Cn}
+            case Character.UNASSIGNED:  { // \p{Cn}
                 return true;
-            default:
-                break;
+            }
+            default: {  break; }
         }
 
         return false;
@@ -155,7 +135,8 @@ public class readTextFile {
 
 
     // --------------------------------------------------------------
-    static String replaceProblematicChars(String myString, Map<Integer,Integer> unsualCharsFound) {
+    static String replaceProblematicChars(String myString
+            ,Map<Integer,Integer> unsualCharsFound) {
     // --------------------------------------------------------------
     // https://stackoverflow.com/questions/6198986/how-can-i-replace-non-printable-unicode-characters-in-java
     // replaceAll("\\p{C}", "?");
@@ -198,7 +179,7 @@ public class readTextFile {
 
             // --- replace strange chars with similar OK ones
             CharCP ccp = replaceCharCP(c,cp);
-            if (ccp.char_patched || ccp.cp_patched) {
+            if (ccp.patched) {
                 c = ccp.c;
                 cp = ccp.cp;
                 newString.append(Character.toChars(cp));
@@ -497,18 +478,150 @@ public class readTextFile {
     }
 
 
+
+    // --------------------------------------------------------------
+    static String addBeginEndMarkers(String line) {
+    // --------------------------------------------------------------
+
+        String startm = "sss";
+        String endm   = "eee";
+        String endStartM = " "+endm+ " "+ startm+" ";
+
+        Set<String> dotNotEndOFSentences = new HashSet<String>();
+        dotNotEndOFSentences.add("mr");
+        dotNotEndOFSentences.add("sr");
+        dotNotEndOFSentences.add("jr");
+        dotNotEndOFSentences.add("jan");
+        dotNotEndOFSentences.add("feb");
+        dotNotEndOFSentences.add("mar");
+        dotNotEndOFSentences.add("apr");
+        dotNotEndOFSentences.add("may");
+        dotNotEndOFSentences.add("jun");
+        dotNotEndOFSentences.add("jul");
+        dotNotEndOFSentences.add("aug");
+        dotNotEndOFSentences.add("sep"); dotNotEndOFSentences.add("sept");
+        dotNotEndOFSentences.add("oct");
+        dotNotEndOFSentences.add("nov");
+        dotNotEndOFSentences.add("dec");
+
+
+        // ?! seem quick and easy, dealt with here
+        // not . that can signal just an abbreviation
+        String workStr = line.replaceAll("[!?] +",endStartM);
+
+
+        // let's try to manage the dot
+        ArrayList<String> chuncksTmpStore = new ArrayList<String>();
+        String[] endWithDot = workStr.split("\\.");
+        int i = -1;
+        for (String s : endWithDot) {
+            i++;
+            String[] words = s.split("\\s");
+            if (words.length-1 < 0)
+                log.info("");
+            String lastWord = (words.length-1 >= 0) ? words[words.length-1] : s;
+            // log.info("last word of \""+s +"\" is '"+lastWord+"'");
+            if (dotNotEndOFSentences.contains(lastWord.toLowerCase())) {
+                chuncksTmpStore.add(s+".");
+                continue;
+            }
+
+            boolean added = false;
+            for (String x : dotNotEndOFSentences) {
+                if (s.toLowerCase().matches("[^a-z]*"+x)) {
+                    chuncksTmpStore.add(s+".");
+                    added = true;
+                    break;
+                }
+            }
+            if (added) continue;
+
+            if (i < (endWithDot.length-1))
+                chuncksTmpStore.add(s+endStartM);
+            else  // last subphrase
+                chuncksTmpStore.add(s+" "+endm); // last chunck only end marker
+        }
+
+        String  replaced = startm + " ";
+        for(String s : chuncksTmpStore) replaced += s;
+
+        return replaced;
+    }
+
+    // --------------------------------------------------------------
+    public static void addBeginEndSentenceMarkers(String fname, String fnameOut) {
+    // --------------------------------------------------------------
+
+        String fpathIn = null;  String fpathOut = null;
+        if ((corpusDir = findDir(corpusDir)) == null) {
+            log.error("directory not found");
+            return;
+        } else {
+            fpathIn = corpusDir + "\\" + fname;
+            fpathOut  = corpusDir + "\\" + fnameOut;
+        }
+
+        OutputStreamWriter writer = null;
+        File fileDir = null;
+        BufferedReader in = null;
+
+        log.debug("input file:"+fpathIn);
+        try {
+            writer = new OutputStreamWriter(new FileOutputStream(fpathOut), StandardCharsets.UTF_8);
+            fileDir = new File(fpathIn);
+            in = new BufferedReader(new InputStreamReader(new FileInputStream(fileDir), "UTF8"));
+            String str;
+            while ((str = in.readLine()) != null) {
+                String line = addBeginEndMarkers(str);
+                log.info("original: "+str);
+                log.info("modified: "+line);
+                writer.write(line+ System.lineSeparator());
+            }
+        } catch (UnsupportedEncodingException e) {
+            log.error(e.getMessage());
+        } catch (IOException e) {
+            log.error(e);
+        } catch (Exception e) {
+            log.error(e);
+        } finally {
+            try {
+                in.close();
+                writer.close();
+                log.info("\noutput file: "+fpathIn
+                        +"\ninput was:   "+fpathIn);
+            } catch (Exception e) {
+                log.error(e);
+            }
+        }
+    }
+
+
+
     // --------------------------------------------------------------
     public static void main(String[] args) {
     // --------------------------------------------------------------
 
-        String fname = "en_US.news_full_1_1.txt";
-        String fnameClean = fname+".clean.txt";
-        writePrintables(fname, fnameClean,unsualCharsFound);
-        writePrintables(fnameClean, fnameClean+"2_txt",unsualCharsFound);
-        dumpUnusual(unsualCharsFound);
-        //findNonPrintables(fnameClean);
-        //breakLines();
-        //longLines();
+        String markedTag = "MARKED";
+
+
+        log.info("working dir: "+System.getProperty("user.dir"));
+
+        String foundDir = findDir(corpusDir);
+        File folder = new File(foundDir);
+        for (final File fileEntry : folder.listFiles()) {
+            if (fileEntry.isDirectory()) {
+                // listFilesForFolder(fileEntry);
+            } else {
+                String fname = fileEntry.getName();
+                if (!fname.matches(markedTag)) {
+                    String fnameClean = fname + markedTag + ".txt";
+                    addBeginEndSentenceMarkers(fname , fnameClean);
+                } else {
+                    log.debug("ignored file: "+fname);
+                }
+            }
+        }
+
     }
 
 
