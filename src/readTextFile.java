@@ -1,12 +1,13 @@
-import org.apache.log4j.Logger;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 
 /**
- * WHole approach quickly copied and adjusted from internet, this class is a service
+ * Whole approach quickly copied and adjusted from internet, this class is a service
  * class, not examined yet logic behind it IT SEEMS useful to manage the fact that
  * characters have different length in bytes
  */
@@ -31,8 +32,7 @@ class CharCP {
 public class readTextFile {
 
     // static  String corpusDir = "..\\..\\..\\..\\..\\data_dev\\capstone_data\\data_in\\corpus_subset";
-    //
-    static  String corpusDir = "..\\..\\..\\..\\..\\data_dev\\capstone_data\\data_in\\corpus_full";
+    static  String corpusDir = "..\\..\\..\\..\\..\\dev_data\\capstone_data\\data_in\\corpus_full";
 
 
     // --------------------------------------------------------------
@@ -170,15 +170,12 @@ public class readTextFile {
         static public CharCP replaceCharCP(char c, int cp)
     // --------------------------------------------------------------
     {
-
         CharCP ccp = new CharCP(c,cp);
-
 
         ccp.patched = true;
 
         // --- by codepoint ---
         switch (cp) {
-
             // map to Blank
             case 174:
             case 183:
@@ -475,8 +472,6 @@ public class readTextFile {
     }
 
 
-
-
     // --------------------------------------------------------------
     public static void replaceUnusualChars(String fname, String fnameOut
             , Map<Integer,Integer> unsualCharsFound) {
@@ -495,19 +490,21 @@ public class readTextFile {
         File fileDir = null;
         BufferedReader in = null;
         unsualCharsFound.clear();
-        log.info("input file:"+fpathIn);
+        log.info("files: \nin:  "+fpathIn+" \nout: "+fpathOut);
         try {
             writer = new OutputStreamWriter(new FileOutputStream(fpathOut), StandardCharsets.UTF_8);
             fileDir = new File(fpathIn);
             in = new BufferedReader(new InputStreamReader(new FileInputStream(fileDir), "UTF8"));
-            String str;
+            String lineOriginal;
             int maxlung = 0;
             long i = 0;
-            while ((str = in.readLine()) != null) {
+            while ((lineOriginal = in.readLine()) != null) {
                 i++;
-                if ((i % 1000) == 0) log.info("process line: "+i+" \""+str.substring(0,Math.min(0,23))+"...\"");
-                String line = replaceProblematicCharsInString(str,unsualCharsFound);
-                writer.write(line+ System.lineSeparator());
+                if ((i % 50000) == 0)
+                    log.debug("process line: "+i+" \""+lineOriginal.substring(
+                            0,Math.min(23, lineOriginal.length()))+"...\"");
+                String lineReplaced = replaceProblematicCharsInString(lineOriginal,unsualCharsFound);
+                writer.write(lineReplaced+ System.lineSeparator());
             }
             log.info("read nr lines: " + i + " max len " + maxlung);
         } catch (UnsupportedEncodingException e) {
@@ -576,6 +573,8 @@ public class readTextFile {
         dotNotEndOFSentences.add("mr");
         dotNotEndOFSentences.add("sr");
         dotNotEndOFSentences.add("jr");
+        dotNotEndOFSentences.add("St");
+
         dotNotEndOFSentences.add("jan");
         dotNotEndOFSentences.add("feb");
         dotNotEndOFSentences.add("mar");
@@ -591,14 +590,100 @@ public class readTextFile {
 
         dotNotEndOFSentences.add("p.m");
 
-
-
-
+        dotNotEndOFSentences.add("A.S.A.P");    //	as	soon	as	possible
+        dotNotEndOFSentences.add("AAA");	    //	The	Agricultural	Adjustment	Act.	This	act	was
+        dotNotEndOFSentences.add("ACE");	    //	a	cool	experience
+        dotNotEndOFSentences.add("AD");	        //	awesome	dude
+        dotNotEndOFSentences.add("AD");	        //	The	era	in	which	we	live,	AD,
+        dotNotEndOFSentences.add("AFAIK");	    //	as	far	as	I	know
+        dotNotEndOFSentences.add("AFK");	    //	away	from	keyboard
+        dotNotEndOFSentences.add("AM");	        //	am
+        dotNotEndOFSentences.add("ANI");	    //	age	not	important
+        dotNotEndOFSentences.add("approx");	    //	approximately
+        dotNotEndOFSentences.add("appt");	    //	appointment
+        dotNotEndOFSentences.add("apt");	    //	apartment
+        dotNotEndOFSentences.add("Ave");	    //	Avenue
+        dotNotEndOFSentences.add("B.Y.O.B");	//	bring	your	own	bottle,	used	for	parties
+        dotNotEndOFSentences.add("BA");	        //	Bachelor	of	Arts
+        dotNotEndOFSentences.add("Blvd");	    //	Boulevard
+        dotNotEndOFSentences.add("BRB");	    //	be	right	back
+        dotNotEndOFSentences.add("BS");	        //	Bachelor	of	Science
+        dotNotEndOFSentences.add("c");	        //	cup/cups
+        dotNotEndOFSentences.add("c/o");	    //	care	of,	used	when	sending	mail	to
+        dotNotEndOFSentences.add("CCC");	    //	The	Civilian	Conservation	Corps.	Single	men	between
+        dotNotEndOFSentences.add("CEO");	    //	Chief	Executive	Officer
+        dotNotEndOFSentences.add("CFO");	    //	Chief	Financial	Officer
+        dotNotEndOFSentences.add("CMO");	    //	Chief	Marketing	Officer
+        dotNotEndOFSentences.add("CUL");	    //	see	you	later
+        dotNotEndOFSentences.add("CWA");	    //	The	Civil	Works	Administration.	Four	million	people
+        dotNotEndOFSentences.add("CWYL");	    //	chat	with	you	later
+        dotNotEndOFSentences.add("Cyn");	    //	Canyon
+        dotNotEndOFSentences.add("D.I.Y");	    //	Do	it	yourself
+        dotNotEndOFSentences.add("DC");	        //	Doctor	of	Chiropractic
+        dotNotEndOFSentences.add("dept");	    //	department
+        dotNotEndOFSentences.add("Dr");	        //	Drive
+        dotNotEndOFSentences.add("E");	        //	east
+        dotNotEndOFSentences.add("e.g");	    //	You	will	often	see	the	abbreviation	e.g.
+        dotNotEndOFSentences.add("E.T.A");	    //	estimated	time	of	arrival
+        dotNotEndOFSentences.add("est");	    //	established
+        dotNotEndOFSentences.add("etc");	    //	Etc,	often	seen	at	the	end	of
+        dotNotEndOFSentences.add("Etc");	    //	Etc,	often	seen	at	the	end	of
+        dotNotEndOFSentences.add("EVP");	    //	Executive	Vice	President
+        dotNotEndOFSentences.add("FDIC");	    //	The	Federal	Deposit	Insurance	Corp.	Since	banks
+        dotNotEndOFSentences.add("FHA");	    //	The	Federal	Housing	Administration.	This	organization	was
+        dotNotEndOFSentences.add("gal");	    //	gallon
+        dotNotEndOFSentences.add("i.e");	    //	Another	popular	abbreviation	we	use	in	daily
+        dotNotEndOFSentences.add("IIRC");	    // if	I	recall/remember	correctly
+        dotNotEndOFSentences.add("IQ");	        // ignorance	quotient
+        dotNotEndOFSentences.add("JD");	        //	Juris	Doctor
+        dotNotEndOFSentences.add("lb");	        //	pound/pounds
+        dotNotEndOFSentences.add("Ln");	        //	Lane
+        dotNotEndOFSentences.add("LOL");	    //	laugh	out	loud
+        dotNotEndOFSentences.add("M.PHIL");	    // or	MPHIL	-	Master	of	Philosophy
+        dotNotEndOFSentences.add("MA");	        // Master	of	Arts
+        dotNotEndOFSentences.add("MD");	        // Managing	Director
+        dotNotEndOFSentences.add("min");	    // minute	or	minimum
+        dotNotEndOFSentences.add("misc");	    // miscellaneous
+        dotNotEndOFSentences.add("Mr");	        // Mister
+        dotNotEndOFSentences.add("Mrs");	    // Mistress	(pronounced	Missus)
+        dotNotEndOFSentences.add("N");	        // north
+        dotNotEndOFSentences.add("n.b");	    // This	is	sometimes	written	at	the	end
+        dotNotEndOFSentences.add("NE");	        // northeast
+        dotNotEndOFSentences.add("no");	        // number
+        dotNotEndOFSentences.add("NP");	        // no	problem
+        dotNotEndOFSentences.add("NRA");	    // The	National	Recovery	Administration.	In	1933,	the
+        dotNotEndOFSentences.add("NW");	        // northwest
+        dotNotEndOFSentences.add("P.S");	    // At	the	end	of	a	letter	or
+        dotNotEndOFSentences.add("PA");	        // Personal	Assistant
+        dotNotEndOFSentences.add("PM");	        // pm
+        dotNotEndOFSentences.add("pt");	        // pint
+        dotNotEndOFSentences.add("qt");	        // quart
+        dotNotEndOFSentences.add("R.S.V.P");	//	Répondez,	s'il	vous	plait,	this	initialism	comes
+        dotNotEndOFSentences.add("Rd");	        //	Road
+        dotNotEndOFSentences.add("ROFL");	    // rolling	on	the	floor	laughing
+        dotNotEndOFSentences.add("S");	        // south
+        dotNotEndOFSentences.add("SE");	        // southeast
+        dotNotEndOFSentences.add("SSA");	    // The	Social	Security	Administration.	The	Social	Security
+        dotNotEndOFSentences.add("St");	        // Street
+        dotNotEndOFSentences.add("SVP");	    // Senior	Vice	President
+        dotNotEndOFSentences.add("SW");	        //southwest
+        dotNotEndOFSentences.add("tbs");	    // tbsp	or	T	-	tablespoon/tablespoons
+        dotNotEndOFSentences.add("tel");	    // telephone
+        dotNotEndOFSentences.add("temp");	    // temperature	or	temporary
+        dotNotEndOFSentences.add("tsp");	    // or	t	-	teaspoon/teaspoons
+        dotNotEndOFSentences.add("TY");	        // thank	you
+        dotNotEndOFSentences.add("U.S");	    // United	states
+        dotNotEndOFSentences.add("vet");	    // veteran	or	veterinarian
+        dotNotEndOFSentences.add("viz");	    //
+                                                // Another	Latin	abbreviation	you	may	see	is
+        dotNotEndOFSentences.add("VP");	        // Vice	President
+        dotNotEndOFSentences.add("vs");	        // versus
+        dotNotEndOFSentences.add("W");	        // west
+        dotNotEndOFSentences.add("WC");	        // wrong	conversation
 
         // ?! seem quick and easy, dealt with here
         // not . that can signal just an abbreviation
         String workStr = line.replaceAll("[!?] +",endStartM);
-
 
         // let's try to manage the dot
         ArrayList<String> chuncksTmpStore = new ArrayList<String>();
@@ -640,95 +725,22 @@ public class readTextFile {
         return replaced;
     }
 
-    // --------------------------------------------------------------
-    public static void addBeginEndSentenceMarkers(String fname, String fnameOut) {
-    // --------------------------------------------------------------
-
-        String fpathIn = null;  String fpathOut = null;
-        if ((corpusDir = findDir(corpusDir)) == null) {
-            log.error("directory not found");
-            return;
-        } else {
-            fpathIn = corpusDir + "\\" + fname;
-            fpathOut  = corpusDir + "\\" + fnameOut;
-        }
-
-        OutputStreamWriter writer = null;
-        File fileDir = null;
-        BufferedReader in = null;
-
-        log.debug("input file:"+fpathIn);
-        try {
-            writer = new OutputStreamWriter(new FileOutputStream(fpathOut), StandardCharsets.UTF_8);
-            fileDir = new File(fpathIn);
-            in = new BufferedReader(new InputStreamReader(new FileInputStream(fileDir), "UTF8"));
-            String str;
-            while ((str = in.readLine()) != null) {
-                String line = addBeginEndMarkers(str);
-                // log.info("original: "+str); log.info("modified: "+line);
-                writer.write(line+ System.lineSeparator());
-            }
-        } catch (UnsupportedEncodingException e) {
-            log.error(e.getMessage());
-        } catch (IOException e) {
-            log.error(e);
-        } catch (Exception e) {
-            log.error(e);
-        } finally {
-            try {
-                in.close();
-                writer.close();
-                log.info("\noutput file: "+fpathIn
-                        +"\ninput was:   "+fpathIn);
-            } catch (Exception e) {
-                log.error(e);
-            }
-        }
-    }
-
 
 
     // --------------------------------------------------------------
-    public static void sentenceMarkersAllFiles() {
-    // --------------------------------------------------------------
-
-        String markedTag = "MARKED";
-
-
-        log.info("working dir: "+System.getProperty("user.dir"));
-
-        String foundDir = findDir(corpusDir);
-        File folder = new File(foundDir);
-        for (final File fileEntry : folder.listFiles()) {
-            if (fileEntry.isDirectory()) {
-                // listFilesForFolder(fileEntry);
-            } else {
-                String fname = fileEntry.getName();
-                if (!fname.matches(".*"+markedTag+".*")) {
-                    String fnameClean = fname + markedTag + ".txt";
-                    log.info("processing file: "+fname);
-                    addBeginEndSentenceMarkers(fname , fnameClean);
-                } else {
-                    log.debug("ignored file: "+fname);
-                }
-            }
-        }
-
-    }
-
-
-    // --------------------------------------------------------------
-    public static void replaceUnusualCharsAllFiles() {
+    public static boolean replaceUnusualCharsAllFiles() {
         // --------------------------------------------------------------
 
         String markedTag = "CLEANCHARS";
 
-
         log.info("working dir: "+System.getProperty("user.dir"));
 
         String foundDir = findDir(corpusDir);
+        if (foundDir == null) {
+            log.error("failed to find corpus dir; searching from:\n "+corpusDir);
+            return false;
+        }
         File folder = new File(foundDir);
-
 
         nrCharsOkAnyway = 0; nrCharReplaced = 0; nrCharsIgnored = 0;
         for (final File fileEntry : folder.listFiles()) {
@@ -739,6 +751,7 @@ public class readTextFile {
                 if (!fname.matches(".*"+markedTag+".*")) {
                     String fnameClean = fname + markedTag + ".txt";
                     //unmanagedChars.clear();
+                    log.info("replacing unusual chars from: "+fname);
                     replaceUnusualChars(fname ,fnameClean , unmanagedChars);
                 } else {
                     log.debug("ignored file: "+fname);
@@ -748,9 +761,14 @@ public class readTextFile {
         dumpUnusual(unmanagedChars);
         log.info("========= Java code ===========");
         dumpUnusualCharsJavaCode(unmanagedChars);
+
+        return true;
     }
 
+
     public static void main(String[] args) {
+
+        System.out.println("Working Directory = " +  System.getProperty("user.dir"));
         replaceUnusualCharsAllFiles();
     }
 
@@ -761,6 +779,7 @@ public class readTextFile {
     static int nrCharReplaced;
 
 
-    final static Logger log = Logger.getLogger(readTextFile.class);
+
+    final static Logger log = LogManager.getLogger(readTextFile.class);
 
 }
