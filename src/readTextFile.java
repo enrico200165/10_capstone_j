@@ -1,6 +1,8 @@
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -96,61 +98,6 @@ public class readTextFile {
             log.error(e.getMessage());
         } catch (Exception e) {
             log.error(e.getMessage());
-        } finally {
-            try {
-                in.close();
-                writer.close();
-            } catch (Exception e) {
-            }
-        }
-    }
-
-
-    // --------------------------------------------------------------
-    public static void breakLines(String fname )
-    // --------------------------------------------------------------
-    {
-        String fpath = null;
-        if ((corpusDir = findDir(corpusDir)) == null) {
-            log.error("directory not found");
-            return;
-        } else {
-            fpath = corpusDir + "\\" + fname;
-        }
-
-        OutputStreamWriter writer = null;
-        File fileDir = null;
-        BufferedReader in = null;
-        try {
-            writer = new OutputStreamWriter(new FileOutputStream(fpath + ".shortened_lines.txt"), StandardCharsets.UTF_8);
-            fileDir = new File(fpath);
-            in = new BufferedReader(new InputStreamReader(new FileInputStream(fileDir), "UTF8"));
-            String str;
-            int maxlung = 0;
-            long i = 1;
-            while ((str = in.readLine()) != null) {
-                i++;
-                if (str.length() > maxlung) {
-                    maxlung = str.length();
-                    if (str.length() > 1024) {
-                        log.error("line " + i + " len " + str.length() + " " + str.substring(0, 32) + "...");
-                    }
-                }
-                List<String> lines = splitLineIfTooLong(str, 1022);
-                for (String line : lines) {
-                    if (!line.endsWith(System.lineSeparator())) {
-                        line += System.lineSeparator();
-                    }
-                    writer.write(line);
-                }
-            }
-            log.error("read nr lines: " + i + " max len " + maxlung);
-        } catch (UnsupportedEncodingException e) {
-            log.error(e);
-        } catch (IOException e) {
-            log.error(e);
-        } catch (Exception e) {
-            log.error(e);
         } finally {
             try {
                 in.close();
@@ -262,13 +209,6 @@ public class readTextFile {
     {
         // https://stackoverflow.com/questions/220547/printable-char-in-java
 
-        switch (cp) {
-            case 65533:
-                return true;
-            default:  break;
-        }
-
-
         // --- by block ---
         Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
         if ( !( block == Character.UnicodeBlock.BASIC_LATIN
@@ -291,6 +231,13 @@ public class readTextFile {
             }
         }
 
+        // by codepoint
+        switch (cp) {
+            case 65533:
+                return true;
+            default:  break;
+        }
+
         return false;
     }
 
@@ -307,25 +254,22 @@ public class readTextFile {
         int len = myString.length();
         StringBuilder newString = new StringBuilder(len);
 
-        for (int offset = 0; offset < myString.length(); ) {
+        for (int char_start_offset = 0; char_start_offset < myString.length(); ) {
 
+            // read character correctly
             // don't change in a hurry below
-            int cp = myString.codePointAt(offset);
-            offset += Character.charCount(cp);
-            char c = (char)cp;
+            // EVGuess calculates each time the character size to move to the next
+            int codePoint = myString.codePointAt(char_start_offset);
+            char_start_offset += Character.charCount(codePoint);
+            char c = (char)codePoint;
+            assert(Character.toChars(codePoint).equals(c));
 
-            //char c2 = (Character.toChars(cp))[0];
-            //String charStr = "";
-            //if (c == c2) { charStr = ""+c; }
-            // else { log.error("errore interno"); System.exit(99); }
-
-            assert(Character.toChars(cp).equals(c));
+            // append to string
             String charStr = ""+c;
 
-
             // --- is it surely OK? ---
-            if ( cp <= 255 ) {
-                newString.append(Character.toChars(cp));
+            if ( codePoint <= 255 ) {
+                newString.append(Character.toChars(codePoint));
                 continue;
             }
             // --- is it OK even thoug > 255 ---
@@ -335,149 +279,53 @@ public class readTextFile {
                     || charStr.matches("[+=¼_\\^$|£€$%&/§@°~»]") //math and currency
                     || charStr.matches("[’”“]") // quotations
                     )  {
-                newString.append(Character.toChars(cp));
+                newString.append(Character.toChars(codePoint));
                 nrCharsOkAnyway++;
                 continue;
             }
 
 
             // --- can we replace it with similar more common one ---
-            CharCP ccp = replaceCharCP(c,cp);
+            CharCP ccp = replaceCharCP(c,codePoint);
             if (ccp.patched) {
-                char oldC = c; int oldCp = cp;
+                char oldC = c; int oldCp = codePoint;
                 c = ccp.c;
-                cp = ccp.cp;
-                log.info("replace: '"+oldC+"' "+oldCp+" with '"+c+"' "+cp);
-                newString.append(Character.toChars(cp));
+                codePoint = ccp.cp;
+                // log.info("replace: '"+oldC+"' "+oldCp+" with '"+c+"' "+codePoint);
+                newString.append(Character.toChars(codePoint));
                 nrCharReplaced++;
                 continue;
             }
 
             // --- ccan we ignore it ? ---
-            if (isCharToRemove(c,cp) )  {
-                log.debug("ignoring: '"+c+"' "+cp);
+            if (isCharToRemove(c,codePoint) )  {
+                log.debug("ignoring: '"+c+"' "+codePoint);
                 nrCharsIgnored++;
                 continue;
             }
 
             // unusual and unmanaged, report it
             java.lang.Object val;
-            if ( ( val = unsualCharsFound.get(cp)) != null) {
-                unsualCharsFound.put(cp, (int)val+1);
+            if ( ( val = unsualCharsFound.get(codePoint)) != null) {
+                unsualCharsFound.put(codePoint, (int)val+1);
             } else {
-                unsualCharsFound.put(cp,1);
+                unsualCharsFound.put(codePoint,1);
             }
             // log.debug("non trivial char: '"+c+"' "+" codepoint: "+cp);
-            newString.append(Character.toChars(cp));
+            newString.append(Character.toChars(codePoint));
         }
 
         return newString.toString();
     }
 
 
-    // --------------------------------------------------------------
-    static boolean hasNonPrintableChar(String s, long lineNum, Map<Integer,Integer> charsFound) {
-        // --------------------------------------------------------------
-        boolean found = false;
-        for (int i = 0; i < s.length(); i++){
-            char c = s.charAt(i);
-            if (!isCharToRemove(c,(int)c)) {
-                found = true;
-                int charCode = (int)(c);
-                // log.info("line: "+lineNum+ " col: "+i +" non printable char, code: "+charCode);
-                java.lang.Object val;
-                if ( ( val = charsFound.get(charCode)) != null) {
-                    charsFound.put(charCode, (int)val+1);
-                } else {
-                    charsFound.put(charCode,1);
-                }
-            }
-        }
-        return found;
-    }
-
-
-    // --------------------------------------------------------------
-    static List<String> splitLineIfTooLong(String line, int maxLength) {
-    // --------------------------------------------------------------
-        List<String> lines = new ArrayList<String>();
-
-        String[] fragments = line.split("\\.\\r*\\n");
-
-        if (fragments.length > 1) {
-            log.debug("breakpoint debug");
-        }
-
-        for (String frag : fragments) {
-            while (frag.length() > maxLength) {
-                String detach = frag.substring(0, maxLength - 1);
-                if (!detach.endsWith(System.lineSeparator()))
-                    detach += System.lineSeparator();
-                lines.add(detach);
-                frag = frag.substring(maxLength, frag.length());
-            }
-            if (!frag.endsWith(System.lineSeparator()))
-                frag += System.lineSeparator();
-            lines.add(frag);
-        }
-        return lines;
-    }
-
-
-    // --------------------------------------------------------------
-    public static void findNonPrintables(String fname,Map<Integer,Integer> unsualCharsFound) {
-    // --------------------------------------------------------------
-        String fpath = null;
-        if ((corpusDir = findDir(corpusDir)) == null) {
-            log.error("directory not found");
-            return;
-        } else {
-            fpath = corpusDir + "\\" + fname;
-        }
-
-        File fileDir = null;
-        BufferedReader in = null;
-        try {
-            fileDir = new File(fpath);
-            in = new BufferedReader(new InputStreamReader(new FileInputStream(fileDir), "UTF8"));
-            String str;
-            long i = 1;
-            int linesWithNonPrint = 0;
-            unsualCharsFound.clear();
-            while ((str = in.readLine()) != null) {
-                i++;
-                if (hasNonPrintableChar(str,i,unsualCharsFound))
-                    linesWithNonPrint++;
-            }
-            log.info("read nr lines: " + i);
-
-            Iterator it = unsualCharsFound.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry pair = (Map.Entry) it.next();
-                log.info("char code: " + pair.getKey()+ " " + String.format("0x%04X", pair.getKey())
-                        +  "'"+pair.getValue() +  "'" + " occurrences " + pair.getValue());
-            }
-        } catch (UnsupportedEncodingException e) {
-            log.error(e);
-        } catch (IOException e) {
-            log.error(e);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        } finally {
-            try {
-                in.close();
-            } catch (Exception e) {
-            }
-        }
-    }
-
 
     // --------------------------------------------------------------
     public static void replaceUnusualChars(String fname, String fnameOut
             , Map<Integer,Integer> unsualCharsFound) {
     // --------------------------------------------------------------
-        String fpathIn = null;
-        String fpathOut = null;
+        String fpathIn = null; String fpathOut = null;
+
         if ((corpusDir = findDir(corpusDir)) == null) {
             log.error("directory not found");
             return;
@@ -490,7 +338,7 @@ public class readTextFile {
         File fileDir = null;
         BufferedReader in = null;
         unsualCharsFound.clear();
-        log.info("files: \nin:  "+fpathIn+" \nout: "+fpathOut);
+        log.info("processing files: \nin:  "+fpathIn+" \nout: "+fpathOut);
         try {
             writer = new OutputStreamWriter(new FileOutputStream(fpathOut), StandardCharsets.UTF_8);
             fileDir = new File(fpathIn);
@@ -500,11 +348,13 @@ public class readTextFile {
             long i = 0;
             while ((lineOriginal = in.readLine()) != null) {
                 i++;
-                if ((i % 50000) == 0)
+                if ((i % 5000) == 0)
                     log.debug("process line: "+i+" \""+lineOriginal.substring(
                             0,Math.min(23, lineOriginal.length()))+"...\"");
                 String lineReplaced = replaceProblematicCharsInString(lineOriginal,unsualCharsFound);
+                lineReplaced = addBeginEndMarkers(lineReplaced);
                 writer.write(lineReplaced+ System.lineSeparator());
+                log.info("\nO: "+ lineOriginal+"R: "+lineReplaced);
             }
             log.info("read nr lines: " + i + " max len " + maxlung);
         } catch (UnsupportedEncodingException e) {
@@ -561,6 +411,126 @@ public class readTextFile {
     //                   SENTENCE MARKERS
     // ##############################################################
 
+
+    static Set<String> initNonEndTokens() {
+
+        Set<String> dotNotEndOFSentencesSet = new HashSet<String>();
+
+        dotNotEndOFSentencesSet.add("mr");
+        dotNotEndOFSentencesSet.add("sr");
+        dotNotEndOFSentencesSet.add("jr");
+        dotNotEndOFSentencesSet.add("St");
+
+        dotNotEndOFSentencesSet.add("jan");
+        dotNotEndOFSentencesSet.add("feb");
+        dotNotEndOFSentencesSet.add("mar");
+        dotNotEndOFSentencesSet.add("apr");
+        dotNotEndOFSentencesSet.add("may");
+        dotNotEndOFSentencesSet.add("jun");
+        dotNotEndOFSentencesSet.add("jul");
+        dotNotEndOFSentencesSet.add("aug");
+        dotNotEndOFSentencesSet.add("sep"); dotNotEndOFSentencesSet.add("sept");
+        dotNotEndOFSentencesSet.add("oct");
+        dotNotEndOFSentencesSet.add("nov");
+        dotNotEndOFSentencesSet.add("dec");
+
+        dotNotEndOFSentencesSet.add("p.m");
+
+        dotNotEndOFSentencesSet.add("A.S.A.P");    //	as	soon	as	possible
+        dotNotEndOFSentencesSet.add("AAA");	    //	The	Agricultural	Adjustment	Act.	This	act	was
+        dotNotEndOFSentencesSet.add("ACE");	    //	a	cool	experience
+        dotNotEndOFSentencesSet.add("AD");	        //	awesome	dude
+        dotNotEndOFSentencesSet.add("AD");	        //	The	era	in	which	we	live,	AD,
+        dotNotEndOFSentencesSet.add("AFAIK");	    //	as	far	as	I	know
+        dotNotEndOFSentencesSet.add("AFK");	    //	away	from	keyboard
+        dotNotEndOFSentencesSet.add("AM");	        //	am
+        dotNotEndOFSentencesSet.add("ANI");	    //	age	not	important
+        dotNotEndOFSentencesSet.add("approx");	    //	approximately
+        dotNotEndOFSentencesSet.add("appt");	    //	appointment
+        dotNotEndOFSentencesSet.add("apt");	    //	apartment
+        dotNotEndOFSentencesSet.add("Ave");	    //	Avenue
+        dotNotEndOFSentencesSet.add("B.Y.O.B");	//	bring	your	own	bottle,	used	for	parties
+        dotNotEndOFSentencesSet.add("BA");	        //	Bachelor	of	Arts
+        dotNotEndOFSentencesSet.add("Blvd");	    //	Boulevard
+        dotNotEndOFSentencesSet.add("BRB");	    //	be	right	back
+        dotNotEndOFSentencesSet.add("BS");	        //	Bachelor	of	Science
+        dotNotEndOFSentencesSet.add("c");	        //	cup/cups
+        dotNotEndOFSentencesSet.add("c/o");	    //	care	of,	used	when	sending	mail	to
+        dotNotEndOFSentencesSet.add("CCC");	    //	The	Civilian	Conservation	Corps.	Single	men	between
+        dotNotEndOFSentencesSet.add("CEO");	    //	Chief	Executive	Officer
+        dotNotEndOFSentencesSet.add("CFO");	    //	Chief	Financial	Officer
+        dotNotEndOFSentencesSet.add("CMO");	    //	Chief	Marketing	Officer
+        dotNotEndOFSentencesSet.add("CUL");	    //	see	you	later
+        dotNotEndOFSentencesSet.add("CWA");	    //	The	Civil	Works	Administration.	Four	million	people
+        dotNotEndOFSentencesSet.add("CWYL");	    //	chat	with	you	later
+        dotNotEndOFSentencesSet.add("Cyn");	    //	Canyon
+        dotNotEndOFSentencesSet.add("D.I.Y");	    //	Do	it	yourself
+        dotNotEndOFSentencesSet.add("DC");	        //	Doctor	of	Chiropractic
+        dotNotEndOFSentencesSet.add("dept");	    //	department
+        dotNotEndOFSentencesSet.add("Dr");	        //	Drive
+        dotNotEndOFSentencesSet.add("E");	        //	east
+        dotNotEndOFSentencesSet.add("e.g");	    //	You	will	often	see	the	abbreviation	e.g.
+        dotNotEndOFSentencesSet.add("E.T.A");	    //	estimated	time	of	arrival
+        dotNotEndOFSentencesSet.add("est");	    //	established
+        dotNotEndOFSentencesSet.add("etc");	    //	Etc,	often	seen	at	the	end	of
+        dotNotEndOFSentencesSet.add("Etc");	    //	Etc,	often	seen	at	the	end	of
+        dotNotEndOFSentencesSet.add("EVP");	    //	Executive	Vice	President
+        dotNotEndOFSentencesSet.add("FDIC");	    //	The	Federal	Deposit	Insurance	Corp.	Since	banks
+        dotNotEndOFSentencesSet.add("FHA");	    //	The	Federal	Housing	Administration.	This	organization	was
+        dotNotEndOFSentencesSet.add("gal");	    //	gallon
+        dotNotEndOFSentencesSet.add("i.e");	    //	Another	popular	abbreviation	we	use	in	daily
+        dotNotEndOFSentencesSet.add("IIRC");	    // if	I	recall/remember	correctly
+        dotNotEndOFSentencesSet.add("IQ");	        // ignorance	quotient
+        dotNotEndOFSentencesSet.add("JD");	        //	Juris	Doctor
+        dotNotEndOFSentencesSet.add("lb");	        //	pound/pounds
+        dotNotEndOFSentencesSet.add("Ln");	        //	Lane
+        dotNotEndOFSentencesSet.add("LOL");	    //	laugh	out	loud
+        dotNotEndOFSentencesSet.add("M.PHIL");	    // or	MPHIL	-	Master	of	Philosophy
+        dotNotEndOFSentencesSet.add("MA");	        // Master	of	Arts
+        dotNotEndOFSentencesSet.add("MD");	        // Managing	Director
+        dotNotEndOFSentencesSet.add("min");	    // minute	or	minimum
+        dotNotEndOFSentencesSet.add("misc");	    // miscellaneous
+        dotNotEndOFSentencesSet.add("Mr");	        // Mister
+        dotNotEndOFSentencesSet.add("Mrs");	    // Mistress	(pronounced	Missus)
+        dotNotEndOFSentencesSet.add("N");	        // north
+        dotNotEndOFSentencesSet.add("n.b");	    // This	is	sometimes	written	at	the	end
+        dotNotEndOFSentencesSet.add("NE");	        // northeast
+        dotNotEndOFSentencesSet.add("no");	        // number
+        dotNotEndOFSentencesSet.add("NP");	        // no	problem
+        dotNotEndOFSentencesSet.add("NRA");	    // The	National	Recovery	Administration.	In	1933,	the
+        dotNotEndOFSentencesSet.add("NW");	        // northwest
+        dotNotEndOFSentencesSet.add("P.S");	    // At	the	end	of	a	letter	or
+        dotNotEndOFSentencesSet.add("PA");	        // Personal	Assistant
+        dotNotEndOFSentencesSet.add("PM");	        // pm
+        dotNotEndOFSentencesSet.add("pt");	        // pint
+        dotNotEndOFSentencesSet.add("qt");	        // quart
+        dotNotEndOFSentencesSet.add("R.S.V.P");	//	Répondez,	s'il	vous	plait,	this	initialism	comes
+        dotNotEndOFSentencesSet.add("Rd");	        //	Road
+        dotNotEndOFSentencesSet.add("ROFL");	    // rolling	on	the	floor	laughing
+        dotNotEndOFSentencesSet.add("S");	        // south
+        dotNotEndOFSentencesSet.add("SE");	        // southeast
+        dotNotEndOFSentencesSet.add("SSA");	    // The	Social	Security	Administration.	The	Social	Security
+        dotNotEndOFSentencesSet.add("St");	        // Street
+        dotNotEndOFSentencesSet.add("SVP");	    // Senior	Vice	President
+        dotNotEndOFSentencesSet.add("SW");	        //southwest
+        dotNotEndOFSentencesSet.add("tbs");	    // tbsp	or	T	-	tablespoon/tablespoons
+        dotNotEndOFSentencesSet.add("tel");	    // telephone
+        dotNotEndOFSentencesSet.add("temp");	    // temperature	or	temporary
+        dotNotEndOFSentencesSet.add("tsp");	    // or	t	-	teaspoon/teaspoons
+        dotNotEndOFSentencesSet.add("TY");	        // thank	you
+        dotNotEndOFSentencesSet.add("U.S");	    // United	states
+        dotNotEndOFSentencesSet.add("vet");	    // veteran	or	veterinarian
+        dotNotEndOFSentencesSet.add("viz");	    //
+        // Another	Latin	abbreviation	you	may	see	is
+        dotNotEndOFSentencesSet.add("VP");	        // Vice	President
+        dotNotEndOFSentencesSet.add("vs");	        // versus
+        dotNotEndOFSentencesSet.add("W");	        // west
+        dotNotEndOFSentencesSet.add("WC");	        // wrong	conversation
+
+        return dotNotEndOFSentencesSet;
+    }
+
+
     // --------------------------------------------------------------
         static String addBeginEndMarkers(String line)
     // --------------------------------------------------------------
@@ -569,117 +539,7 @@ public class readTextFile {
         String endm   = "eee";
         String endStartM = " "+endm+ " "+ startm+" ";
 
-        Set<String> dotNotEndOFSentences = new HashSet<String>();
-        dotNotEndOFSentences.add("mr");
-        dotNotEndOFSentences.add("sr");
-        dotNotEndOFSentences.add("jr");
-        dotNotEndOFSentences.add("St");
-
-        dotNotEndOFSentences.add("jan");
-        dotNotEndOFSentences.add("feb");
-        dotNotEndOFSentences.add("mar");
-        dotNotEndOFSentences.add("apr");
-        dotNotEndOFSentences.add("may");
-        dotNotEndOFSentences.add("jun");
-        dotNotEndOFSentences.add("jul");
-        dotNotEndOFSentences.add("aug");
-        dotNotEndOFSentences.add("sep"); dotNotEndOFSentences.add("sept");
-        dotNotEndOFSentences.add("oct");
-        dotNotEndOFSentences.add("nov");
-        dotNotEndOFSentences.add("dec");
-
-        dotNotEndOFSentences.add("p.m");
-
-        dotNotEndOFSentences.add("A.S.A.P");    //	as	soon	as	possible
-        dotNotEndOFSentences.add("AAA");	    //	The	Agricultural	Adjustment	Act.	This	act	was
-        dotNotEndOFSentences.add("ACE");	    //	a	cool	experience
-        dotNotEndOFSentences.add("AD");	        //	awesome	dude
-        dotNotEndOFSentences.add("AD");	        //	The	era	in	which	we	live,	AD,
-        dotNotEndOFSentences.add("AFAIK");	    //	as	far	as	I	know
-        dotNotEndOFSentences.add("AFK");	    //	away	from	keyboard
-        dotNotEndOFSentences.add("AM");	        //	am
-        dotNotEndOFSentences.add("ANI");	    //	age	not	important
-        dotNotEndOFSentences.add("approx");	    //	approximately
-        dotNotEndOFSentences.add("appt");	    //	appointment
-        dotNotEndOFSentences.add("apt");	    //	apartment
-        dotNotEndOFSentences.add("Ave");	    //	Avenue
-        dotNotEndOFSentences.add("B.Y.O.B");	//	bring	your	own	bottle,	used	for	parties
-        dotNotEndOFSentences.add("BA");	        //	Bachelor	of	Arts
-        dotNotEndOFSentences.add("Blvd");	    //	Boulevard
-        dotNotEndOFSentences.add("BRB");	    //	be	right	back
-        dotNotEndOFSentences.add("BS");	        //	Bachelor	of	Science
-        dotNotEndOFSentences.add("c");	        //	cup/cups
-        dotNotEndOFSentences.add("c/o");	    //	care	of,	used	when	sending	mail	to
-        dotNotEndOFSentences.add("CCC");	    //	The	Civilian	Conservation	Corps.	Single	men	between
-        dotNotEndOFSentences.add("CEO");	    //	Chief	Executive	Officer
-        dotNotEndOFSentences.add("CFO");	    //	Chief	Financial	Officer
-        dotNotEndOFSentences.add("CMO");	    //	Chief	Marketing	Officer
-        dotNotEndOFSentences.add("CUL");	    //	see	you	later
-        dotNotEndOFSentences.add("CWA");	    //	The	Civil	Works	Administration.	Four	million	people
-        dotNotEndOFSentences.add("CWYL");	    //	chat	with	you	later
-        dotNotEndOFSentences.add("Cyn");	    //	Canyon
-        dotNotEndOFSentences.add("D.I.Y");	    //	Do	it	yourself
-        dotNotEndOFSentences.add("DC");	        //	Doctor	of	Chiropractic
-        dotNotEndOFSentences.add("dept");	    //	department
-        dotNotEndOFSentences.add("Dr");	        //	Drive
-        dotNotEndOFSentences.add("E");	        //	east
-        dotNotEndOFSentences.add("e.g");	    //	You	will	often	see	the	abbreviation	e.g.
-        dotNotEndOFSentences.add("E.T.A");	    //	estimated	time	of	arrival
-        dotNotEndOFSentences.add("est");	    //	established
-        dotNotEndOFSentences.add("etc");	    //	Etc,	often	seen	at	the	end	of
-        dotNotEndOFSentences.add("Etc");	    //	Etc,	often	seen	at	the	end	of
-        dotNotEndOFSentences.add("EVP");	    //	Executive	Vice	President
-        dotNotEndOFSentences.add("FDIC");	    //	The	Federal	Deposit	Insurance	Corp.	Since	banks
-        dotNotEndOFSentences.add("FHA");	    //	The	Federal	Housing	Administration.	This	organization	was
-        dotNotEndOFSentences.add("gal");	    //	gallon
-        dotNotEndOFSentences.add("i.e");	    //	Another	popular	abbreviation	we	use	in	daily
-        dotNotEndOFSentences.add("IIRC");	    // if	I	recall/remember	correctly
-        dotNotEndOFSentences.add("IQ");	        // ignorance	quotient
-        dotNotEndOFSentences.add("JD");	        //	Juris	Doctor
-        dotNotEndOFSentences.add("lb");	        //	pound/pounds
-        dotNotEndOFSentences.add("Ln");	        //	Lane
-        dotNotEndOFSentences.add("LOL");	    //	laugh	out	loud
-        dotNotEndOFSentences.add("M.PHIL");	    // or	MPHIL	-	Master	of	Philosophy
-        dotNotEndOFSentences.add("MA");	        // Master	of	Arts
-        dotNotEndOFSentences.add("MD");	        // Managing	Director
-        dotNotEndOFSentences.add("min");	    // minute	or	minimum
-        dotNotEndOFSentences.add("misc");	    // miscellaneous
-        dotNotEndOFSentences.add("Mr");	        // Mister
-        dotNotEndOFSentences.add("Mrs");	    // Mistress	(pronounced	Missus)
-        dotNotEndOFSentences.add("N");	        // north
-        dotNotEndOFSentences.add("n.b");	    // This	is	sometimes	written	at	the	end
-        dotNotEndOFSentences.add("NE");	        // northeast
-        dotNotEndOFSentences.add("no");	        // number
-        dotNotEndOFSentences.add("NP");	        // no	problem
-        dotNotEndOFSentences.add("NRA");	    // The	National	Recovery	Administration.	In	1933,	the
-        dotNotEndOFSentences.add("NW");	        // northwest
-        dotNotEndOFSentences.add("P.S");	    // At	the	end	of	a	letter	or
-        dotNotEndOFSentences.add("PA");	        // Personal	Assistant
-        dotNotEndOFSentences.add("PM");	        // pm
-        dotNotEndOFSentences.add("pt");	        // pint
-        dotNotEndOFSentences.add("qt");	        // quart
-        dotNotEndOFSentences.add("R.S.V.P");	//	Répondez,	s'il	vous	plait,	this	initialism	comes
-        dotNotEndOFSentences.add("Rd");	        //	Road
-        dotNotEndOFSentences.add("ROFL");	    // rolling	on	the	floor	laughing
-        dotNotEndOFSentences.add("S");	        // south
-        dotNotEndOFSentences.add("SE");	        // southeast
-        dotNotEndOFSentences.add("SSA");	    // The	Social	Security	Administration.	The	Social	Security
-        dotNotEndOFSentences.add("St");	        // Street
-        dotNotEndOFSentences.add("SVP");	    // Senior	Vice	President
-        dotNotEndOFSentences.add("SW");	        //southwest
-        dotNotEndOFSentences.add("tbs");	    // tbsp	or	T	-	tablespoon/tablespoons
-        dotNotEndOFSentences.add("tel");	    // telephone
-        dotNotEndOFSentences.add("temp");	    // temperature	or	temporary
-        dotNotEndOFSentences.add("tsp");	    // or	t	-	teaspoon/teaspoons
-        dotNotEndOFSentences.add("TY");	        // thank	you
-        dotNotEndOFSentences.add("U.S");	    // United	states
-        dotNotEndOFSentences.add("vet");	    // veteran	or	veterinarian
-        dotNotEndOFSentences.add("viz");	    //
-                                                // Another	Latin	abbreviation	you	may	see	is
-        dotNotEndOFSentences.add("VP");	        // Vice	President
-        dotNotEndOFSentences.add("vs");	        // versus
-        dotNotEndOFSentences.add("W");	        // west
-        dotNotEndOFSentences.add("WC");	        // wrong	conversation
+        dotNotEndOFSentences = initNonEndTokens();
 
         // ?! seem quick and easy, dealt with here
         // not . that can signal just an abbreviation
@@ -739,6 +599,9 @@ public class readTextFile {
         if (foundDir == null) {
             log.error("failed to find corpus dir; searching from:\n "+corpusDir);
             return false;
+        } else {
+            log.info("working in dir:\n "+corpusDir);
+            log.info("------------------------------------------");
         }
         File folder = new File(foundDir);
 
@@ -751,7 +614,6 @@ public class readTextFile {
                 if (!fname.matches(".*"+markedTag+".*")) {
                     String fnameClean = fname + markedTag + ".txt";
                     //unmanagedChars.clear();
-                    log.info("replacing unusual chars from: "+fname);
                     replaceUnusualChars(fname ,fnameClean , unmanagedChars);
                 } else {
                     log.debug("ignored file: "+fname);
@@ -769,17 +631,18 @@ public class readTextFile {
     public static void main(String[] args) {
 
         System.out.println("Working Directory = " +  System.getProperty("user.dir"));
+        dotNotEndOFSentences = initNonEndTokens();
         replaceUnusualCharsAllFiles();
     }
+
 
     static TreeMap<Integer,Integer> unmanagedChars = new TreeMap<Integer,Integer>();
 
     static int nrCharsOkAnyway;
     static int nrCharsIgnored;  // not replaced
     static int nrCharReplaced;
-
+    private static Set<String> dotNotEndOFSentences;
 
 
     final static Logger log = LogManager.getLogger(readTextFile.class);
-
 }
