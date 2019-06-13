@@ -19,12 +19,19 @@ public class AdjustTextFilesTest {
         // cioè nel mezzo di una parola
 
         // --- temp - test here things not working
-        line = "sr. jr.";
-        expected = "sss sr. jr. eee";
+
+        // --- end temp
+
+        line = "";
+        expected = "sss eee";
         ret = AdjustTextFiles.addBeginEndMarkersNew(line);
         assertEquals(expected, ret);
 
-        // --- end temp
+        line = ".";
+        expected = "sss eee";
+        ret = AdjustTextFiles.addBeginEndMarkersNew(line);
+        assertEquals(expected, ret);
+
         line = "a";
         expected = "sss a eee";
         ret = AdjustTextFiles.addBeginEndMarkersNew(line);
@@ -62,20 +69,45 @@ public class AdjustTextFilesTest {
         ret = AdjustTextFiles.addBeginEndMarkersNew(line);
         assertEquals(expected, ret);
 
-        line = "sr.";
-        expected = "sss sr. eee";
+        line =         "a .";
+        expected = "sss a  eee";  // punto sparisce ma si inserisce spazio
+        // a destra come sempre
         ret = AdjustTextFiles.addBeginEndMarkersNew(line);
         assertEquals(expected, ret);
+
 
         line = "sr. jr.";
         expected = "sss sr. jr. eee";
         ret = AdjustTextFiles.addBeginEndMarkersNew(line);
         assertEquals(expected, ret);
 
-        line = "a. A";
-        expected = "sss a. eee sss A eee";
+        line = "sr. . jr.";
+        expected = "sss sr. . jr. eee";  // niente maiuscola dopo uno spazio
         ret = AdjustTextFiles.addBeginEndMarkersNew(line);
         assertEquals(expected, ret);
+
+        line =         "sr. . jr. .";
+        expected = "sss sr. . jr.  eee";  // niente maiuscola dopo uno spazio
+        ret = AdjustTextFiles.addBeginEndMarkersNew(line);
+        assertEquals(expected, ret);
+
+        line = "sr. . jr.";
+        expected = "sss sr. . jr. eee";  // niente maiuscola dopo uno spazio
+        ret = AdjustTextFiles.addBeginEndMarkersNew(line);
+        assertEquals(expected, ret);
+
+
+        // crazy .
+
+        line = "...";
+        expected = "sss ... eee";
+        ret = AdjustTextFiles.addBeginEndMarkersNew(line);
+        assertEquals(expected, ret);
+
+        line = "..";
+        expected = "sss .. eee";
+        ret = AdjustTextFiles.addBeginEndMarkersNew(line);
+        assertEquals(expected, ret)
     }
 
     static AdjustTextFiles o;

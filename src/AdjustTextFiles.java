@@ -404,137 +404,6 @@ public class AdjustTextFiles {
     }
 
 
-
-
-    // ##############################################################
-    //                   SENTENCE MARKERS
-    // ##############################################################
-
-
-    static Set<String> initNonEndTokens() {
-
-        Set<String> dotNotEndOFSentencesSet = new HashSet<String>();
-
-        dotNotEndOFSentencesSet.add("mr");
-        dotNotEndOFSentencesSet.add("sr");
-        dotNotEndOFSentencesSet.add("jr");
-        dotNotEndOFSentencesSet.add("St");
-
-        dotNotEndOFSentencesSet.add("jan");
-        dotNotEndOFSentencesSet.add("feb");
-        dotNotEndOFSentencesSet.add("mar");
-        dotNotEndOFSentencesSet.add("apr");
-        dotNotEndOFSentencesSet.add("may");
-        dotNotEndOFSentencesSet.add("jun");
-        dotNotEndOFSentencesSet.add("jul");
-        dotNotEndOFSentencesSet.add("aug");
-        dotNotEndOFSentencesSet.add("sep"); dotNotEndOFSentencesSet.add("sept");
-        dotNotEndOFSentencesSet.add("oct");
-        dotNotEndOFSentencesSet.add("nov");
-        dotNotEndOFSentencesSet.add("dec");
-
-        dotNotEndOFSentencesSet.add("p.m");
-
-        dotNotEndOFSentencesSet.add("A.S.A.P");    //	as	soon	as	possible
-        dotNotEndOFSentencesSet.add("AAA");	    //	The	Agricultural	Adjustment	Act.	This	act	was
-        dotNotEndOFSentencesSet.add("ACE");	    //	a	cool	experience
-        dotNotEndOFSentencesSet.add("AD");	        //	awesome	dude
-        dotNotEndOFSentencesSet.add("AD");	        //	The	era	in	which	we	live,	AD,
-        dotNotEndOFSentencesSet.add("AFAIK");	    //	as	far	as	I	know
-        dotNotEndOFSentencesSet.add("AFK");	    //	away	from	keyboard
-        dotNotEndOFSentencesSet.add("AM");	        //	am
-        dotNotEndOFSentencesSet.add("ANI");	    //	age	not	important
-        dotNotEndOFSentencesSet.add("approx");	    //	approximately
-        dotNotEndOFSentencesSet.add("appt");	    //	appointment
-        dotNotEndOFSentencesSet.add("apt");	    //	apartment
-        dotNotEndOFSentencesSet.add("Ave");	    //	Avenue
-        dotNotEndOFSentencesSet.add("B.Y.O.B");	//	bring	your	own	bottle,	used	for	parties
-        dotNotEndOFSentencesSet.add("BA");	        //	Bachelor	of	Arts
-        dotNotEndOFSentencesSet.add("Blvd");	    //	Boulevard
-        dotNotEndOFSentencesSet.add("BRB");	    //	be	right	back
-        dotNotEndOFSentencesSet.add("BS");	        //	Bachelor	of	Science
-        dotNotEndOFSentencesSet.add("c");	        //	cup/cups
-        dotNotEndOFSentencesSet.add("c/o");	    //	care	of,	used	when	sending	mail	to
-        dotNotEndOFSentencesSet.add("CCC");	    //	The	Civilian	Conservation	Corps.	Single	men	between
-        dotNotEndOFSentencesSet.add("CEO");	    //	Chief	Executive	Officer
-        dotNotEndOFSentencesSet.add("CFO");	    //	Chief	Financial	Officer
-        dotNotEndOFSentencesSet.add("CMO");	    //	Chief	Marketing	Officer
-        dotNotEndOFSentencesSet.add("CUL");	    //	see	you	later
-        dotNotEndOFSentencesSet.add("CWA");	    //	The	Civil	Works	Administration.	Four	million	people
-        dotNotEndOFSentencesSet.add("CWYL");	    //	chat	with	you	later
-        dotNotEndOFSentencesSet.add("Cyn");	    //	Canyon
-        dotNotEndOFSentencesSet.add("D.I.Y");	    //	Do	it	yourself
-        dotNotEndOFSentencesSet.add("DC");	        //	Doctor	of	Chiropractic
-        dotNotEndOFSentencesSet.add("D.C");	        //	Doctor	of	Chiropractic
-        dotNotEndOFSentencesSet.add("dept");	    //	department
-        dotNotEndOFSentencesSet.add("Dr");	        //	Drive
-        dotNotEndOFSentencesSet.add("E");	        //	east
-        dotNotEndOFSentencesSet.add("e.g");	    //	You	will	often	see	the	abbreviation	e.g.
-        dotNotEndOFSentencesSet.add("E.T.A");	    //	estimated	time	of	arrival
-        dotNotEndOFSentencesSet.add("est");	    //	established
-        dotNotEndOFSentencesSet.add("etc");	    //	Etc,	often	seen	at	the	end	of
-        dotNotEndOFSentencesSet.add("Etc");	    //	Etc,	often	seen	at	the	end	of
-        dotNotEndOFSentencesSet.add("EVP");	    //	Executive	Vice	President
-        dotNotEndOFSentencesSet.add("FDIC");	    //	The	Federal	Deposit	Insurance	Corp.	Since	banks
-        dotNotEndOFSentencesSet.add("FHA");	    //	The	Federal	Housing	Administration.	This	organization	was
-        dotNotEndOFSentencesSet.add("gal");	    //	gallon
-        dotNotEndOFSentencesSet.add("i.e");	    //	Another	popular	abbreviation	we	use	in	daily
-        dotNotEndOFSentencesSet.add("IIRC");	    // if	I	recall/remember	correctly
-        dotNotEndOFSentencesSet.add("IQ");	        // ignorance	quotient
-        dotNotEndOFSentencesSet.add("JD");	        //	Juris	Doctor
-        dotNotEndOFSentencesSet.add("lb");	        //	pound/pounds
-        dotNotEndOFSentencesSet.add("Ln");	        //	Lane
-        dotNotEndOFSentencesSet.add("LOL");	    //	laugh	out	loud
-        dotNotEndOFSentencesSet.add("M.PHIL");	    // or	MPHIL	-	Master	of	Philosophy
-        dotNotEndOFSentencesSet.add("MA");	        // Master	of	Arts
-        dotNotEndOFSentencesSet.add("MD");	        // Managing	Director
-        dotNotEndOFSentencesSet.add("min");	    // minute	or	minimum
-        dotNotEndOFSentencesSet.add("misc");	    // miscellaneous
-        dotNotEndOFSentencesSet.add("Mr");	        // Mister
-        dotNotEndOFSentencesSet.add("Mrs");	    // Mistress	(pronounced	Missus)
-        dotNotEndOFSentencesSet.add("N");	        // north
-        dotNotEndOFSentencesSet.add("n.b");	    // This	is	sometimes	written	at	the	end
-        dotNotEndOFSentencesSet.add("NE");	        // northeast
-        dotNotEndOFSentencesSet.add("no");	        // number
-        dotNotEndOFSentencesSet.add("NP");	        // no	problem
-        dotNotEndOFSentencesSet.add("NRA");	    // The	National	Recovery	Administration.	In	1933,	the
-        dotNotEndOFSentencesSet.add("NW");	        // northwest
-        dotNotEndOFSentencesSet.add("P.S");	    // At	the	end	of	a	letter	or
-        dotNotEndOFSentencesSet.add("PA");	        // Personal	Assistant
-        dotNotEndOFSentencesSet.add("PM");	        // pm
-        dotNotEndOFSentencesSet.add("pt");	        // pint
-        dotNotEndOFSentencesSet.add("qt");	        // quart
-        dotNotEndOFSentencesSet.add("R.S.V.P");	//	Répondez,	s'il	vous	plait,	this	initialism	comes
-        dotNotEndOFSentencesSet.add("Rd");	        //	Road
-        dotNotEndOFSentencesSet.add("ROFL");	    // rolling	on	the	floor	laughing
-        dotNotEndOFSentencesSet.add("S");	        // south
-        dotNotEndOFSentencesSet.add("SE");	        // southeast
-        dotNotEndOFSentencesSet.add("SSA");	    // The	Social	Security	Administration.	The	Social	Security
-        dotNotEndOFSentencesSet.add("St");	        // Street
-        dotNotEndOFSentencesSet.add("SVP");	    // Senior	Vice	President
-        dotNotEndOFSentencesSet.add("SW");	        //southwest
-        dotNotEndOFSentencesSet.add("tbs");	    // tbsp	or	T	-	tablespoon/tablespoons
-        dotNotEndOFSentencesSet.add("tel");	    // telephone
-        dotNotEndOFSentencesSet.add("temp");	    // temperature	or	temporary
-        dotNotEndOFSentencesSet.add("tsp");	    // or	t	-	teaspoon/teaspoons
-        dotNotEndOFSentencesSet.add("TY");	        // thank	you
-        dotNotEndOFSentencesSet.add("U.S");	    // United	states
-        dotNotEndOFSentencesSet.add("vet");	    // veteran	or	veterinarian
-        dotNotEndOFSentencesSet.add("viz");	    //
-        // Another	Latin	abbreviation	you	may	see	is
-        dotNotEndOFSentencesSet.add("VP");	        // Vice	President
-        dotNotEndOFSentencesSet.add("vs");	        // versus
-        dotNotEndOFSentencesSet.add("W");	        // west
-        dotNotEndOFSentencesSet.add("WC");	        // wrong	conversation
-
-        return dotNotEndOFSentencesSet;
-    }
-
-
-
-
-
-
     // --------------------------------------------------------------
     static String addBeginEndMarkersNew(String line)
     // --------------------------------------------------------------
@@ -545,7 +414,7 @@ public class AdjustTextFiles {
 
         // -- edge cases
         if (line.matches("[\\s]*"))
-            return endStartM;
+            return startm + " "+endm;
 
         if (line.matches("[\\s]*[\\w]+[\\s]*"))
             return startm + " "+line.trim()+ " "+endm;
@@ -629,6 +498,9 @@ public class AdjustTextFiles {
             String d = replaced+ " "+ lastWord+ " "+endm;
             return d;
         }
+        if (lastWord.equals("."))  //edge case, just "."
+            return replaced += " "+endm;
+
         lastWord = lastWord.substring(0,lastWord.length()-1);
         if (!acronymEtc.contains(lastWordLastChunk.substring(0,lastWordLastChunk.length()-1))) {
             replaced += " "+ lastWord + " "+endm;
@@ -749,6 +621,134 @@ public class AdjustTextFiles {
     static int nrCharsIgnored;  // not replaced
     static int nrCharReplaced;
     private static Set<String> acronymEtc = initNonEndTokens();;
+
+    // ##############################################################
+    //                   SENTENCE MARKERS
+    // ##############################################################
+
+    static Set<String> initNonEndTokens() {
+
+        Set<String> dotNotEndOFSentencesSet = new HashSet<String>();
+
+        dotNotEndOFSentencesSet.add("."); // per gestire ..
+        dotNotEndOFSentencesSet.add(".."); // per gestire ...
+
+
+        dotNotEndOFSentencesSet.add("mr");
+        dotNotEndOFSentencesSet.add("sr");
+        dotNotEndOFSentencesSet.add("jr");
+        dotNotEndOFSentencesSet.add("st");
+
+        dotNotEndOFSentencesSet.add("jan");
+        dotNotEndOFSentencesSet.add("feb");
+        dotNotEndOFSentencesSet.add("mar");
+        dotNotEndOFSentencesSet.add("apr");
+        dotNotEndOFSentencesSet.add("may");
+        dotNotEndOFSentencesSet.add("jun");
+        dotNotEndOFSentencesSet.add("jul");
+        dotNotEndOFSentencesSet.add("aug");
+        dotNotEndOFSentencesSet.add("sep"); dotNotEndOFSentencesSet.add("sept");
+        dotNotEndOFSentencesSet.add("oct");
+        dotNotEndOFSentencesSet.add("nov");
+        dotNotEndOFSentencesSet.add("dec");
+
+        dotNotEndOFSentencesSet.add("p.m");
+
+        dotNotEndOFSentencesSet.add("a.s.a.p");    //	as	soon	as	possible
+        dotNotEndOFSentencesSet.add("aaa");	    //	The	Agricultural	Adjustment	Act.	This	act	was
+        dotNotEndOFSentencesSet.add("ACE");	    //	a	cool	experience
+        dotNotEndOFSentencesSet.add("ad");	        //	awesome	dude
+        dotNotEndOFSentencesSet.add("AFAIK");	    //	as	far	as	I	know
+        dotNotEndOFSentencesSet.add("AFK");	    //	away	from	keyboard
+        dotNotEndOFSentencesSet.add("am");	        //	am
+        dotNotEndOFSentencesSet.add("AM");	        //	am
+        dotNotEndOFSentencesSet.add("ANI");	    //	age	not	important
+        dotNotEndOFSentencesSet.add("approx");	    //	approximately
+        dotNotEndOFSentencesSet.add("appt");	    //	appointment
+        dotNotEndOFSentencesSet.add("apt");	    //	apartment
+        dotNotEndOFSentencesSet.add("Ave");	    //	Avenue
+        dotNotEndOFSentencesSet.add("B.Y.O.B");	//	bring	your	own	bottle,	used	for	parties
+        dotNotEndOFSentencesSet.add("BA");	        //	Bachelor	of	Arts
+        dotNotEndOFSentencesSet.add("Blvd");	    //	Boulevard
+        dotNotEndOFSentencesSet.add("BRB");	    //	be	right	back
+        dotNotEndOFSentencesSet.add("BS");	        //	Bachelor	of	Science
+        dotNotEndOFSentencesSet.add("c");	        //	cup/cups
+        dotNotEndOFSentencesSet.add("c/o");	    //	care	of,	used	when	sending	mail	to
+        dotNotEndOFSentencesSet.add("CCC");	    //	The	Civilian	Conservation	Corps.	Single	men	between
+        dotNotEndOFSentencesSet.add("CEO");	    //	Chief	Executive	Officer
+        dotNotEndOFSentencesSet.add("CFO");	    //	Chief	Financial	Officer
+        dotNotEndOFSentencesSet.add("CMO");	    //	Chief	Marketing	Officer
+        dotNotEndOFSentencesSet.add("CUL");	    //	see	you	later
+        dotNotEndOFSentencesSet.add("CWA");	    //	The	Civil	Works	Administration.	Four	million	people
+        dotNotEndOFSentencesSet.add("CWYL");	    //	chat	with	you	later
+        dotNotEndOFSentencesSet.add("Cyn");	    //	Canyon
+        dotNotEndOFSentencesSet.add("D.I.Y");	    //	Do	it	yourself
+        dotNotEndOFSentencesSet.add("DC");	        //	Doctor	of	Chiropractic
+        dotNotEndOFSentencesSet.add("D.C");	        //	Doctor	of	Chiropractic
+        dotNotEndOFSentencesSet.add("dept");	    //	department
+        dotNotEndOFSentencesSet.add("Dr");	        //	Drive
+        dotNotEndOFSentencesSet.add("E");	        //	east
+        dotNotEndOFSentencesSet.add("e.g");	    //	You	will	often	see	the	abbreviation	e.g.
+        dotNotEndOFSentencesSet.add("E.T.A");	    //	estimated	time	of	arrival
+        dotNotEndOFSentencesSet.add("est");	    //	established
+        dotNotEndOFSentencesSet.add("etc");	    //	Etc,	often	seen	at	the	end	of
+        dotNotEndOFSentencesSet.add("Etc");	    //	Etc,	often	seen	at	the	end	of
+        dotNotEndOFSentencesSet.add("EVP");	    //	Executive	Vice	President
+        dotNotEndOFSentencesSet.add("FDIC");	    //	The	Federal	Deposit	Insurance	Corp.	Since	banks
+        dotNotEndOFSentencesSet.add("FHA");	    //	The	Federal	Housing	Administration.	This	organization	was
+        dotNotEndOFSentencesSet.add("gal");	    //	gallon
+        dotNotEndOFSentencesSet.add("i.e");	    //	Another	popular	abbreviation	we	use	in	daily
+        dotNotEndOFSentencesSet.add("IIRC");	    // if	I	recall/remember	correctly
+        dotNotEndOFSentencesSet.add("IQ");	        // ignorance	quotient
+        dotNotEndOFSentencesSet.add("JD");	        //	Juris	Doctor
+        dotNotEndOFSentencesSet.add("lb");	        //	pound/pounds
+        dotNotEndOFSentencesSet.add("Ln");	        //	Lane
+        dotNotEndOFSentencesSet.add("LOL");	    //	laugh	out	loud
+        dotNotEndOFSentencesSet.add("M.PHIL");	    // or	MPHIL	-	Master	of	Philosophy
+        dotNotEndOFSentencesSet.add("MA");	        // Master	of	Arts
+        dotNotEndOFSentencesSet.add("MD");	        // Managing	Director
+        dotNotEndOFSentencesSet.add("min");	    // minute	or	minimum
+        dotNotEndOFSentencesSet.add("misc");	    // miscellaneous
+        dotNotEndOFSentencesSet.add("Mr");	        // Mister
+        dotNotEndOFSentencesSet.add("Mrs");	    // Mistress	(pronounced	Missus)
+        dotNotEndOFSentencesSet.add("N");	        // north
+        dotNotEndOFSentencesSet.add("n.b");	    // This	is	sometimes	written	at	the	end
+        dotNotEndOFSentencesSet.add("NE");	        // northeast
+        dotNotEndOFSentencesSet.add("no");	        // number
+        dotNotEndOFSentencesSet.add("NP");	        // no	problem
+        dotNotEndOFSentencesSet.add("NRA");	    // The	National	Recovery	Administration.	In	1933,	the
+        dotNotEndOFSentencesSet.add("NW");	        // northwest
+        dotNotEndOFSentencesSet.add("P.S");	    // At	the	end	of	a	letter	or
+        dotNotEndOFSentencesSet.add("PA");	        // Personal	Assistant
+        dotNotEndOFSentencesSet.add("PM");	        // pm
+        dotNotEndOFSentencesSet.add("pt");	        // pint
+        dotNotEndOFSentencesSet.add("qt");	        // quart
+        dotNotEndOFSentencesSet.add("R.S.V.P");	//	Répondez,	s'il	vous	plait,	this	initialism	comes
+        dotNotEndOFSentencesSet.add("Rd");	        //	Road
+        dotNotEndOFSentencesSet.add("ROFL");	    // rolling	on	the	floor	laughing
+        dotNotEndOFSentencesSet.add("S");	        // south
+        dotNotEndOFSentencesSet.add("SE");	        // southeast
+        dotNotEndOFSentencesSet.add("SSA");	    // The	Social	Security	Administration.	The	Social	Security
+        dotNotEndOFSentencesSet.add("St");	        // Street
+        dotNotEndOFSentencesSet.add("SVP");	    // Senior	Vice	President
+        dotNotEndOFSentencesSet.add("SW");	        //southwest
+        dotNotEndOFSentencesSet.add("tbs");	    // tbsp	or	T	-	tablespoon/tablespoons
+        dotNotEndOFSentencesSet.add("tel");	    // telephone
+        dotNotEndOFSentencesSet.add("temp");	    // temperature	or	temporary
+        dotNotEndOFSentencesSet.add("tsp");	    // or	t	-	teaspoon/teaspoons
+        dotNotEndOFSentencesSet.add("TY");	        // thank	you
+        dotNotEndOFSentencesSet.add("U.S");	    // United	states
+        dotNotEndOFSentencesSet.add("vet");	    // veteran	or	veterinarian
+        dotNotEndOFSentencesSet.add("viz");	    //
+        // Another	Latin	abbreviation	you	may	see	is
+        dotNotEndOFSentencesSet.add("VP");	        // Vice	President
+        dotNotEndOFSentencesSet.add("vs");	        // versus
+        dotNotEndOFSentencesSet.add("W");	        // west
+        dotNotEndOFSentencesSet.add("WC");	        // wrong	conversation
+
+        return dotNotEndOFSentencesSet;
+    }
+
 
 
     final static Logger log = LogManager.getLogger(AdjustTextFiles.class);
