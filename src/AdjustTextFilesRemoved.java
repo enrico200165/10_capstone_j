@@ -9,7 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class readTextFileRemoved {
+public class AdjustTextFilesRemoved {
 
 
     static String corpusDir = null;
@@ -246,7 +246,7 @@ public class readTextFileRemoved {
 
 
 
-    final static Logger log = LogManager.getLogger(readTextFileRemoved.class);
+    final static Logger log = LogManager.getLogger(AdjustTextFilesRemoved.class);
 
 
 }

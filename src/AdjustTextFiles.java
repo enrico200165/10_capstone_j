@@ -1,7 +1,6 @@
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -31,7 +30,7 @@ class CharCP {
 *
 *
 ---------------------------------------------------------------------------* */
-public class readTextFile {
+public class AdjustTextFiles {
 
     // static  String corpusDir = "..\\..\\..\\..\\..\\data_dev\\capstone_data\\data_in\\corpus_subset";
     static  String corpusDir = "..\\..\\..\\..\\..\\dev_data\\capstone_data\\data_in\\corpus_full";
@@ -354,7 +353,7 @@ public class readTextFile {
                 String lineReplaced = replaceProblematicCharsInString(lineOriginal,unsualCharsFound);
                 lineReplaced = addBeginEndMarkers(lineReplaced);
                 writer.write(lineReplaced+ System.lineSeparator());
-                log.info("\nO: "+ lineOriginal+"R: "+lineReplaced);
+                log.info("\nO: "+ lineOriginal+"\nR: "+lineReplaced+"\n");
             }
             log.info("read nr lines: " + i + " max len " + maxlung);
         } catch (UnsupportedEncodingException e) {
@@ -466,6 +465,7 @@ public class readTextFile {
         dotNotEndOFSentencesSet.add("Cyn");	    //	Canyon
         dotNotEndOFSentencesSet.add("D.I.Y");	    //	Do	it	yourself
         dotNotEndOFSentencesSet.add("DC");	        //	Doctor	of	Chiropractic
+        dotNotEndOFSentencesSet.add("D.C");	        //	Doctor	of	Chiropractic
         dotNotEndOFSentencesSet.add("dept");	    //	department
         dotNotEndOFSentencesSet.add("Dr");	        //	Drive
         dotNotEndOFSentencesSet.add("E");	        //	east
@@ -531,15 +531,108 @@ public class readTextFile {
     }
 
 
+
+
+
+
     // --------------------------------------------------------------
-        static String addBeginEndMarkers(String line)
+    static String addBeginEndMarkersNew(String line)
     // --------------------------------------------------------------
     {
         String startm = "sss";
         String endm   = "eee";
         String endStartM = " "+endm+ " "+ startm+" ";
 
-        dotNotEndOFSentences = initNonEndTokens();
+        // -- edge cases
+        if (line.matches("[\\s]*"))
+            return endStartM;
+
+        if (line.matches("[\\s]*[\\w]+[\\s]*"))
+            return startm + " "+line.trim()+ " "+endm;
+
+        if (line.matches("[\\s]*[\\w]+\\.[\\s]*"))
+            return startm + " "+line.trim()+ " "+endm;
+        // --- End Edge Cases
+
+        // ?! seem quick and easy, dealt with here
+        // not . that can signal just an abbreviation
+        String workStr = line.replaceAll("[!?] +",endStartM);
+
+        // let's try to manage the dot inserting start end sentence markers
+
+        ArrayList<String> chuncksTmpStore = new ArrayList<String>();
+        int afterLastMatch = 0; int lastWhiteSpace = -1;
+
+        for ( int i = 0; i < line.length(); ) {
+
+            String c = line.substring(i, i+1);
+
+            // track whitespace to look back
+            if (c.matches("[\\s]")) {
+                lastWhiteSpace = i;
+            }
+
+            // no dot nothing to do
+            if (line.charAt(i) != '.') {
+                i++;
+                continue;
+            }
+
+            // current char is a .
+
+            // check character after
+            if (i+1 < line.length())  {
+                String c1 = line.substring(i+1, i+2);
+                if (c1.matches("[\\S]")) {
+                    // no whitespace after, in the middle of a word,  do nothing
+                    // TOTO MIGHT FAIL IF end line is considered whitespace
+                    // and the  string is not trimmed
+                    i++;
+                    continue;
+                }
+                // followed by  whitespace
+                if  (i+2 < line.length()) { // check if  second  next is upper case
+                    String c2 = line.substring(i+2, i+3);
+                    if (c2.matches("[A-Z]"))  {
+                        // look back that it is not an abbreviation
+                        String thisWord = line.substring(lastWhiteSpace+1,i+1);
+                        if (!dotNotEndOFSentences.contains(thisWord)) {
+                            String chunkToAdd = line.substring(afterLastMatch, i) + endStartM;
+                            chuncksTmpStore.add(chunkToAdd);
+                            i++;
+                            afterLastMatch = i+1;
+                            continue;
+                        } else {
+                            log.info("recognized as acronym or similar: "+thisWord);
+                        }
+                    }
+                }
+            }
+
+            i++;
+        }
+        String chunk = line.substring(afterLastMatch,line.length());
+        chuncksTmpStore.add(chunk);
+
+        String  replaced = startm + " ";
+        for(String s : chuncksTmpStore) replaced += s;
+        // may end with  .<whitespace>
+        replaced = replaced.trim();
+        replaced = replaced.charAt(replaced.length()-1) == '.' ?
+                replaced.substring(0,replaced.length()-1) : replaced;
+        replaced += " "+endm;
+
+        return replaced;
+    }
+
+
+    // --------------------------------------------------------------
+    static String addBeginEndMarkers(String line)
+    // --------------------------------------------------------------
+    {
+        String startm = "sss";
+        String endm   = "eee";
+        String endStartM = " "+endm+ " "+ startm+" ";
 
         // ?! seem quick and easy, dealt with here
         // not . that can signal just an abbreviation
@@ -631,7 +724,7 @@ public class readTextFile {
     public static void main(String[] args) {
 
         System.out.println("Working Directory = " +  System.getProperty("user.dir"));
-        dotNotEndOFSentences = initNonEndTokens();
+        // dotNotEndOFSentences = initNonEndTokens();
         replaceUnusualCharsAllFiles();
     }
 
@@ -641,8 +734,8 @@ public class readTextFile {
     static int nrCharsOkAnyway;
     static int nrCharsIgnored;  // not replaced
     static int nrCharReplaced;
-    private static Set<String> dotNotEndOFSentences;
+    private static Set<String> dotNotEndOFSentences = initNonEndTokens();;
 
 
-    final static Logger log = LogManager.getLogger(readTextFile.class);
+    final static Logger log = LogManager.getLogger(AdjustTextFiles.class);
 }
