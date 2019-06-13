@@ -19,6 +19,10 @@ public class AdjustTextFilesTest {
         // cioè nel mezzo di una parola
 
         // --- temp - test here things not working
+        line = "sr. jr.";
+        expected = "sss sr. jr. eee";
+        ret = AdjustTextFiles.addBeginEndMarkersNew(line);
+        assertEquals(expected, ret);
 
         // --- end temp
         line = "a";

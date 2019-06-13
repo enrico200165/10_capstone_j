@@ -541,7 +541,7 @@ public class AdjustTextFiles {
     {
         String startm = "sss";
         String endm   = "eee";
-        String endStartM = " "+endm+ " "+ startm+" ";
+        String endStartM = " "+endm+ " "+ startm;
 
         // -- edge cases
         if (line.matches("[\\s]*"))
@@ -595,9 +595,9 @@ public class AdjustTextFiles {
                     String c2 = line.substring(i+2, i+3);
                     if (c2.matches("[A-Z]"))  {
                         // look back that it is not an abbreviation
-                        String thisWord = line.substring(lastWhiteSpace+1,i+1);
-                        if (!dotNotEndOFSentences.contains(thisWord)) {
-                            String chunkToAdd = line.substring(afterLastMatch, i) + endStartM;
+                        String thisWord = line.substring(lastWhiteSpace+1,i);
+                        if (!acronymEtc.contains(thisWord)) {
+                            String chunkToAdd = line.substring(afterLastMatch, i+1) + endStartM;
                             chuncksTmpStore.add(chunkToAdd);
                             i++;
                             afterLastMatch = i+1;
@@ -614,13 +614,27 @@ public class AdjustTextFiles {
         String chunk = line.substring(afterLastMatch,line.length());
         chuncksTmpStore.add(chunk);
 
-        String  replaced = startm + " ";
-        for(String s : chuncksTmpStore) replaced += s;
-        // may end with  .<whitespace>
-        replaced = replaced.trim();
-        replaced = replaced.charAt(replaced.length()-1) == '.' ?
-                replaced.substring(0,replaced.length()-1) : replaced;
-        replaced += " "+endm;
+        String  replaced = startm;
+        int i = 0;
+        while (i < chuncksTmpStore.size()-1) {
+            replaced += " "+chuncksTmpStore.get(i);
+            i++;
+        }
+        // manage the last chunk, that might end with . Sr..
+        String lastWord = chuncksTmpStore.get(i);
+        String lastWordTokens[] = chuncksTmpStore.get(i).split("[\\s]");
+        String lastWordLastChunk = lastWordTokens[lastWordTokens.length-1];
+
+        if (lastWordLastChunk.charAt(lastWordLastChunk.length()-1) != '.') {
+            String d = replaced+ " "+ lastWord+ " "+endm;
+            return d;
+        }
+        lastWord = lastWord.substring(0,lastWord.length()-1);
+        if (!acronymEtc.contains(lastWordLastChunk.substring(0,lastWordLastChunk.length()-1))) {
+            replaced += " "+ lastWord + " "+endm;
+        } else {
+            replaced += " "+lastWord+". "+endm;
+        }
 
         return replaced;
     }
@@ -648,7 +662,7 @@ public class AdjustTextFiles {
             // if (words.length-1 < 0) log.info("");
             String lastWord = (words.length-1 >= 0) ? words[words.length-1] : s;
             // log.info("last word of \""+s +"\" is '"+lastWord+"'");
-            if (dotNotEndOFSentences.contains(lastWord.toLowerCase())
+            if (acronymEtc.contains(lastWord.toLowerCase())
                 //    || lastWord.equals(lastWord.toUpperCase()) // probably acronym
             ) {
                 chuncksTmpStore.add(s+".");
@@ -657,7 +671,7 @@ public class AdjustTextFiles {
 
 
             boolean added = false;
-            for (String x : dotNotEndOFSentences) {
+            for (String x : acronymEtc) {
                 if (s.toLowerCase().matches("[^a-z]*"+x)) {
                     chuncksTmpStore.add(s+".");
                     added = true;
@@ -724,7 +738,7 @@ public class AdjustTextFiles {
     public static void main(String[] args) {
 
         System.out.println("Working Directory = " +  System.getProperty("user.dir"));
-        // dotNotEndOFSentences = initNonEndTokens();
+        // acronymEtc = initNonEndTokens();
         replaceUnusualCharsAllFiles();
     }
 
@@ -734,7 +748,7 @@ public class AdjustTextFiles {
     static int nrCharsOkAnyway;
     static int nrCharsIgnored;  // not replaced
     static int nrCharReplaced;
-    private static Set<String> dotNotEndOFSentences = initNonEndTokens();;
+    private static Set<String> acronymEtc = initNonEndTokens();;
 
 
     final static Logger log = LogManager.getLogger(AdjustTextFiles.class);
