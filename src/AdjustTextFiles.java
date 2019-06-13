@@ -404,8 +404,24 @@ public class AdjustTextFiles {
     }
 
 
+    static boolean isItMark(char chr) {
+        return isItMark(Character.toString(chr));
+    }
+    static boolean isItMark(String chr) {
+        return chr.matches("[\\.!\\?]");
+    }
+
+    static String lastChar(String s) {
+        if (s == null || s.length() == 0)
+            return "";
+        else{
+            int l = s.length();
+            return(s.substring(l-1,l));
+        }
+    }
+
     // --------------------------------------------------------------
-    static String addBeginEndMarkersNew(String line)
+    static String addBeginEndMarkers(String line)
     // --------------------------------------------------------------
     {
         String startm = "sss";
@@ -442,7 +458,7 @@ public class AdjustTextFiles {
             }
 
             // no dot nothing to do
-            if (line.charAt(i) != '.') {
+            if (!isItMark(line.charAt(i))) {
                 i++;
                 continue;
             }
@@ -451,14 +467,32 @@ public class AdjustTextFiles {
 
             // check character after
             if (i+1 < line.length())  {
+                String restOfLine = line.substring(i+1,line.length());
                 String c1 = line.substring(i+1, i+2);
+                // gestione "sdsd xxx."
+                if (c1.matches("[\"]")) {
+                    // no whitespace after, \in the middle of a word,  do nothing
+                    // TOTO MIGHT FAIL IF end line is considered whitespace
+                    // and the  string is not trimmed
+                    String chunkToAdd;
+                    if (restOfLine.substring(1,restOfLine.length()).matches("[\\S]*")) {
+                        chunkToAdd = line.substring(afterLastMatch, i) + "\"";
+                    } else {
+                        chunkToAdd = line.substring(afterLastMatch, i) + "\" "+endStartM;
+                    }
+                    chuncksTmpStore.add(chunkToAdd);
+                    afterLastMatch = i+2;
+                    i += 2;
+                    continue;
+                }
                 if (c1.matches("[\\S]")) {
-                    // no whitespace after, in the middle of a word,  do nothing
+                    // no whitespace after, \in the middle of a word,  do nothing
                     // TOTO MIGHT FAIL IF end line is considered whitespace
                     // and the  string is not trimmed
                     i++;
                     continue;
                 }
+
                 // followed by  whitespace
                 if  (i+2 < line.length()) { // check if  second  next is upper case
                     String c2 = line.substring(i+2, i+3);
@@ -466,7 +500,7 @@ public class AdjustTextFiles {
                         // look back that it is not an abbreviation
                         String thisWord = line.substring(lastWhiteSpace+1,i);
                         if (!acronymEtc.contains(thisWord)) {
-                            String chunkToAdd = line.substring(afterLastMatch, i+1) + endStartM;
+                            String chunkToAdd = line.substring(afterLastMatch, i) + endStartM;
                             chuncksTmpStore.add(chunkToAdd);
                             i++;
                             afterLastMatch = i+1;
@@ -481,7 +515,8 @@ public class AdjustTextFiles {
             i++;
         }
         String chunk = line.substring(afterLastMatch,line.length());
-        chuncksTmpStore.add(chunk);
+        if (chunk != null && chunk.length() > 0)
+            chuncksTmpStore.add(chunk);
 
         String  replaced = startm;
         int i = 0;
@@ -494,7 +529,8 @@ public class AdjustTextFiles {
         String lastWordTokens[] = chuncksTmpStore.get(i).split("[\\s]");
         String lastWordLastChunk = lastWordTokens[lastWordTokens.length-1];
 
-        if (lastWordLastChunk.charAt(lastWordLastChunk.length()-1) != '.') {
+        if (!isItMark(lastChar(lastWordLastChunk))
+        && !lastWordLastChunk.matches(endm+"[\\s]*")) {
             String d = replaced+ " "+ lastWord+ " "+endm;
             return d;
         }
@@ -511,58 +547,6 @@ public class AdjustTextFiles {
         return replaced;
     }
 
-
-    // --------------------------------------------------------------
-    static String addBeginEndMarkers(String line)
-    // --------------------------------------------------------------
-    {
-        String startm = "sss";
-        String endm   = "eee";
-        String endStartM = " "+endm+ " "+ startm+" ";
-
-        // ?! seem quick and easy, dealt with here
-        // not . that can signal just an abbreviation
-        String workStr = line.replaceAll("[!?] +",endStartM);
-
-        // let's try to manage the dot
-        ArrayList<String> chuncksTmpStore = new ArrayList<String>();
-        String[] endWithDot = workStr.split("\\.");
-        int i = -1;
-        for (String s : endWithDot) {
-            i++;
-            String[] words = s.split("\\s");
-            // if (words.length-1 < 0) log.info("");
-            String lastWord = (words.length-1 >= 0) ? words[words.length-1] : s;
-            // log.info("last word of \""+s +"\" is '"+lastWord+"'");
-            if (acronymEtc.contains(lastWord.toLowerCase())
-                //    || lastWord.equals(lastWord.toUpperCase()) // probably acronym
-            ) {
-                chuncksTmpStore.add(s+".");
-                continue;
-            }
-
-
-            boolean added = false;
-            for (String x : acronymEtc) {
-                if (s.toLowerCase().matches("[^a-z]*"+x)) {
-                    chuncksTmpStore.add(s+".");
-                    added = true;
-                    break;
-                }
-            }
-            if (added) continue;
-
-            if (i < (endWithDot.length-1))
-                chuncksTmpStore.add(s+endStartM);
-            else  // last subphrase
-                chuncksTmpStore.add(s+" "+endm); // last chunck only end marker
-        }
-
-        String  replaced = startm + " ";
-        for(String s : chuncksTmpStore) replaced += s;
-
-        return replaced;
-    }
 
 
 
