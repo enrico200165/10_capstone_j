@@ -20,11 +20,6 @@ public class AdjustTextFilesTest {
 
         // --- temp - test here things not working
 
-        line = "sr.";
-        expected = "sss sr. eee";
-        ret = AdjustTextFiles.addBeginEndMarkersNew(line);
-        assertEquals(expected, ret);
-
         // --- end temp
         line = "a";
         expected = "sss a eee";
@@ -43,7 +38,7 @@ public class AdjustTextFilesTest {
 
 
         line = "a. A";
-        expected = "sss a eee sss A eee";
+        expected = "sss a. eee sss A eee";
         ret = AdjustTextFiles.addBeginEndMarkersNew(line);
         assertEquals(expected, ret);
 
@@ -63,6 +58,20 @@ public class AdjustTextFilesTest {
         ret = AdjustTextFiles.addBeginEndMarkersNew(line);
         assertEquals(expected, ret);
 
+        line = "sr.";
+        expected = "sss sr. eee";
+        ret = AdjustTextFiles.addBeginEndMarkersNew(line);
+        assertEquals(expected, ret);
+
+        line = "sr. jr.";
+        expected = "sss sr. jr. eee";
+        ret = AdjustTextFiles.addBeginEndMarkersNew(line);
+        assertEquals(expected, ret);
+
+        line = "a. A";
+        expected = "sss a. eee sss A eee";
+        ret = AdjustTextFiles.addBeginEndMarkersNew(line);
+        assertEquals(expected, ret);
     }
 
     static AdjustTextFiles o;
