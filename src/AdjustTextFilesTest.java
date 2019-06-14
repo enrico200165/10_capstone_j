@@ -23,77 +23,81 @@ public class AdjustTextFilesTest {
 
         // --- end temp
 
+        String s = AdjustTextFiles.startM(null);
+        String e = AdjustTextFiles.endM(null);
+        String es = AdjustTextFiles.endStartM(null);
+
         line = "";
-        expected = "sss eee";
+        expected = s+" "+e;
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         line = ".";
-        expected = "sss eee";
+        expected = s+" "+e;
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         line = "a";
-        expected = "sss a eee";
+        expected = s+" a "+e;
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         line = "a a";
-        expected = "sss a a eee";
+        expected = "sssdd a a eeedd";
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         line = "a a.";
-        expected = "sss a a eee";
+        expected = "sssdd a a eeedd";
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
 
         line = "a. A";
-        expected = "sss a eee sss A eee";
+        expected = "sssdd a eeedd sssdd A eeedd";
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         // simple detection of abbreviations
         line = "a sr. a";
-        expected = "sss a sr. a eee";
+        expected = "sssdd a sr. a eeedd";
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         line = "sr. a";
-        expected = "sss sr. a eee";
+        expected = s+" sr. a "+e;
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         line = "sr.";
-        expected = "sss sr. eee";
+        expected = s+" sr. "+e;
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         line =         "a .";
-        expected = "sss a  eee";  // punto sparisce ma si inserisce spazio
+        expected = s+" a  "+e;  // punto sparisce ma si inserisce spazio
         // a destra come sempre
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
 
         line = "sr. jr.";
-        expected = "sss sr. jr. eee";
+        expected = s+" sr. jr. "+e;
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         line = "sr. . jr.";
-        expected = "sss sr. . jr. eee";  // niente maiuscola dopo uno spazio
+        expected = s+" sr. . jr. "+e;  // niente maiuscola dopo uno spazio
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         line =         "sr. . jr. .";
-        expected = "sss sr. . jr.  eee";  // niente maiuscola dopo uno spazio
+        expected = s+" sr. . jr.  "+e;  // niente maiuscola dopo uno spazio
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         line = "sr. . jr.";
-        expected = "sss sr. . jr. eee";  // niente maiuscola dopo uno spazio
+        expected = s+" sr. . jr. "+e;  // niente maiuscola dopo uno spazio
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
@@ -101,28 +105,28 @@ public class AdjustTextFilesTest {
         // crazy .
 
         line = "...";
-        expected = "sss ... eee";
+        expected = s+" ... "+e;
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         line = "..";
-        expected = "sss .. eee";
+        expected = s+" .. "+e;
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         // simple nearly normal
         line = "Ciao. Ciao";
-        expected = "sss Ciao eee sss Ciao eee";
+        expected = s+" Ciao "+AdjustTextFiles.endStartM(null)+" Ciao "+e;
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         line = "Ciao. Ciao";
-        expected = "sss Ciao eee sss Ciao eee";
+        expected = s+" Ciao "+es+" Ciao "+e;
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 
         line =         "notes that Reps. Moran as well ... Not that I take attendance.\"";
-        expected = "sss notes that Reps eee sss Moran as well ... Not that I take attendance\" eee";
+        expected = s+" notes that Reps "+es+" Moran as well ... Not that I take attendance\" "+e;
         ret = AdjustTextFiles.addBeginEndMarkers(line);
         assertEquals(expected, ret);
 

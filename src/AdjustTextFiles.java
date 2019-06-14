@@ -420,37 +420,55 @@ public class AdjustTextFiles {
         }
     }
 
+
+    static String startPrefix = "sss";
+    static String endPrefix = "eee";
+
+    static String markSuffix(String  mark) {
+        if (mark == null)     return "dd";
+
+        if (mark.equals(".")) return "dd";
+        if (mark.equals("?") )return "qq";
+        if (mark.equals("!") )return "ee";
+
+        // may be called when no mark has been met, default
+        return "dd";
+    }
+
+    static String startM(String  mark) { return startPrefix+markSuffix(mark); }
+    static String endM(String  mark)   { return endPrefix+markSuffix(mark); }
+
+
+    static String endStartM(String  mark) { return endM(mark)+ " "+ startM(mark);}
+
     // --------------------------------------------------------------
     static String addBeginEndMarkers(String line)
     // --------------------------------------------------------------
     {
-        String startm = "sss";
-        String endm   = "eee";
-        String endStartM = " "+endm+ " "+ startm;
 
         // -- edge cases
         if (line.matches("[\\s]*"))
-            return startm + " "+endm;
+            return startM(".") + " "+endM(".");
 
         if (line.matches("[\\s]*[\\w]+[\\s]*"))
-            return startm + " "+line.trim()+ " "+endm;
+            return startM(".") + " "+line.trim()+ " "+endM(".");
 
         if (line.matches("[\\s]*[\\w]+\\.[\\s]*"))
-            return startm + " "+line.trim()+ " "+endm;
+            return startM(".") + " "+line.trim()+ " "+endM(".");
         // --- End Edge Cases
 
         // ?! seem quick and easy, dealt with here
         // not . that can signal just an abbreviation
-        String workStr = line.replaceAll("[!?] +",endStartM);
-
+        //String workStr = line.replaceAll("[!?] +",endStartM("."));
+        // TODO
         // let's try to manage the dot inserting start end sentence markers
 
         ArrayList<String> chuncksTmpStore = new ArrayList<String>();
         int afterLastMatch = 0; int lastWhiteSpace = -1;
-
+        String c = ".";
         for ( int i = 0; i < line.length(); ) {
 
-            String c = line.substring(i, i+1);
+            c = line.substring(i, i+1);
 
             // track whitespace to look back
             if (c.matches("[\\s]")) {
@@ -458,7 +476,7 @@ public class AdjustTextFiles {
             }
 
             // no dot nothing to do
-            if (!isItMark(line.charAt(i))) {
+            if (!isItMark(c)) {
                 i++;
                 continue;
             }
@@ -478,7 +496,7 @@ public class AdjustTextFiles {
                     if (restOfLine.substring(1,restOfLine.length()).matches("[\\S]*")) {
                         chunkToAdd = line.substring(afterLastMatch, i) + "\"";
                     } else {
-                        chunkToAdd = line.substring(afterLastMatch, i) + "\" "+endStartM;
+                        chunkToAdd = line.substring(afterLastMatch, i) + "\" "+endStartM(c);
                     }
                     chuncksTmpStore.add(chunkToAdd);
                     afterLastMatch = i+2;
@@ -500,7 +518,7 @@ public class AdjustTextFiles {
                         // look back that it is not an abbreviation
                         String thisWord = line.substring(lastWhiteSpace+1,i);
                         if (!acronymEtc.contains(thisWord)) {
-                            String chunkToAdd = line.substring(afterLastMatch, i) + endStartM;
+                            String chunkToAdd = line.substring(afterLastMatch, i) + " "+endStartM(c);
                             chuncksTmpStore.add(chunkToAdd);
                             i++;
                             afterLastMatch = i+1;
@@ -518,7 +536,7 @@ public class AdjustTextFiles {
         if (chunk != null && chunk.length() > 0)
             chuncksTmpStore.add(chunk);
 
-        String  replaced = startm;
+        String  replaced = startM(null);
         int i = 0;
         while (i < chuncksTmpStore.size()-1) {
             replaced += " "+chuncksTmpStore.get(i);
@@ -530,18 +548,18 @@ public class AdjustTextFiles {
         String lastWordLastChunk = lastWordTokens[lastWordTokens.length-1];
 
         if (!isItMark(lastChar(lastWordLastChunk))
-        && !lastWordLastChunk.matches(endm+"[\\s]*")) {
-            String d = replaced+ " "+ lastWord+ " "+endm;
+        && !lastWordLastChunk.matches(endM(c)+"[\\s]*")) {
+            String d = replaced+ " "+ lastWord+ " "+endM(c);
             return d;
         }
         if (lastWord.equals("."))  //edge case, just "."
-            return replaced += " "+endm;
+            return replaced += " "+endM(c);
 
         lastWord = lastWord.substring(0,lastWord.length()-1);
         if (!acronymEtc.contains(lastWordLastChunk.substring(0,lastWordLastChunk.length()-1))) {
-            replaced += " "+ lastWord + " "+endm;
+            replaced += " "+ lastWord + " "+endM(c);
         } else {
-            replaced += " "+lastWord+". "+endm;
+            replaced += " "+lastWord+". "+endM(c);
         }
 
         return replaced;
