@@ -350,7 +350,12 @@ public class AdjustTextFiles {
                 if ((i % 5000) == 0)
                     log.debug("process line: "+i+" \""+lineOriginal.substring(
                             0,Math.min(23, lineOriginal.length()))+"...\"");
-                String lineReplaced = replaceProblematicCharsInString(lineOriginal,unsualCharsFound);
+
+                String lineReplaced = lineOriginal;
+                // https://notepad-plus-plus.org/community/topic/14812/how-to-search-for-unknown-3-digit-characters-with-black-background/2
+                lineReplaced = lineReplaced.replaceAll(
+                        "(?!\\r|\\n)[\\x00-\\x1f\\x80-\\x9f]","");
+                lineReplaced = replaceProblematicCharsInString(lineReplaced,unsualCharsFound);
                 if (begEndMarkers)
                     lineReplaced = addBeginEndMarkers(lineReplaced);
                 writer.write(lineReplaced+ System.lineSeparator());
@@ -436,7 +441,7 @@ public class AdjustTextFiles {
         return "dd";
     }
 
-    static String startM(String  mark) { return startPrefix+markSuffix(mark); }
+    static String startM(String  mark) { return startPrefix+markSuffix("."); }
     static String endM(String  mark)   { return endPrefix+markSuffix(mark); }
 
 
@@ -573,9 +578,9 @@ public class AdjustTextFiles {
     public static boolean replaceUnusualCharsAllFiles(boolean begEndMarkers) {
         // --------------------------------------------------------------
 
-        String markedTag = "";
+        String stemTag = "CLEAN";
 
-        markedTag = begEndMarkers ? "CLEAN_ONLY" : "CLEAN_MARK";
+        String tag = stemTag + "_"+(begEndMarkers ? "_MARK" : "_ONLY");
 
         log.info("working dir: "+System.getProperty("user.dir"));
 
@@ -595,8 +600,16 @@ public class AdjustTextFiles {
                 // listFilesForFolder(fileEntry);
             } else {
                 String fname = fileEntry.getName();
-                if (!fname.matches(".*"+markedTag+".*")) {
-                    String fnameClean = fname + markedTag + ".txt";
+                if (!fname.matches(".*\\.txt"))
+                    continue;
+                if (!fname.matches(".*"+stemTag+".*")) {
+                    String pieces[] = fname.split("\\.");
+                    String fnameClean = "";
+                    int i = 0;
+                    for (i = 0; i < pieces.length-2; i++)
+                        fnameClean += fnameClean + pieces[i]+".";
+                    fnameClean += pieces[i] + "_"+tag + ".txt";
+
                     //unmanagedChars.clear();
                     replaceUnusualChars(fname ,fnameClean , unmanagedChars, begEndMarkers);
                 } else {
@@ -619,7 +632,7 @@ public class AdjustTextFiles {
 
         System.out.println("Working Directory = " +  System.getProperty("user.dir"));
         // acronymEtc = initNonEndTokens();
-        replaceUnusualCharsAllFiles(false);
+        replaceUnusualCharsAllFiles(true);
     }
 
 
