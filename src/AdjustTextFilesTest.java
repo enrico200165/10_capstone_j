@@ -19,13 +19,16 @@ public class AdjustTextFilesTest {
         // punto non seguito da new line o spazio
         // cioè nel mezzo di una parola
 
-        // --- temp - test here things not working
-
-        // --- end temp
-
         String s = AdjustTextFiles.startM(null);
+        String sq = AdjustTextFiles.startM("?");
+        String se = AdjustTextFiles.startM("!");
         String e = AdjustTextFiles.endM(null);
+        String eq = AdjustTextFiles.endM("?");
+        String ee = AdjustTextFiles.endM("!");
         String es = AdjustTextFiles.endStartM(null);
+
+        // --- temp - test here things not working
+        // --- end temp
 
         line = "";
         expected = s+" "+e;
@@ -131,6 +134,16 @@ public class AdjustTextFilesTest {
         assertEquals(expected, ret);
 
 
+        // -------------- other marks ----------------
+        line =         "who?";
+        expected = sq+" who "+eq;
+        ret = AdjustTextFiles.addBeginEndMarkers(line);
+        assertEquals(expected, ret);
+
+        line =         "go!";
+        expected = se+" go "+ee;
+        ret = AdjustTextFiles.addBeginEndMarkers(line);
+        assertEquals(expected, ret);
 
     }
 

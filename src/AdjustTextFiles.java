@@ -321,7 +321,7 @@ public class AdjustTextFiles {
 
     // --------------------------------------------------------------
     public static void replaceUnusualChars(String fname, String fnameOut
-            , Map<Integer,Integer> unsualCharsFound) {
+            , Map<Integer,Integer> unsualCharsFound, boolean begEndMarkers) {
     // --------------------------------------------------------------
         String fpathIn = null; String fpathOut = null;
 
@@ -351,7 +351,8 @@ public class AdjustTextFiles {
                     log.debug("process line: "+i+" \""+lineOriginal.substring(
                             0,Math.min(23, lineOriginal.length()))+"...\"");
                 String lineReplaced = replaceProblematicCharsInString(lineOriginal,unsualCharsFound);
-                lineReplaced = addBeginEndMarkers(lineReplaced);
+                if (begEndMarkers)
+                    lineReplaced = addBeginEndMarkers(lineReplaced);
                 writer.write(lineReplaced+ System.lineSeparator());
                 log.info("\nO: "+ lineOriginal+"\nR: "+lineReplaced+"\n");
             }
@@ -536,7 +537,7 @@ public class AdjustTextFiles {
         if (chunk != null && chunk.length() > 0)
             chuncksTmpStore.add(chunk);
 
-        String  replaced = startM(null);
+        String  replaced = startM(c);
         int i = 0;
         while (i < chuncksTmpStore.size()-1) {
             replaced += " "+chuncksTmpStore.get(i);
@@ -569,10 +570,12 @@ public class AdjustTextFiles {
 
 
     // --------------------------------------------------------------
-    public static boolean replaceUnusualCharsAllFiles() {
+    public static boolean replaceUnusualCharsAllFiles(boolean begEndMarkers) {
         // --------------------------------------------------------------
 
-        String markedTag = "CLEANCHARS";
+        String markedTag = "";
+
+        markedTag = begEndMarkers ? "CLEAN_ONLY" : "CLEAN_MARK";
 
         log.info("working dir: "+System.getProperty("user.dir"));
 
@@ -595,7 +598,7 @@ public class AdjustTextFiles {
                 if (!fname.matches(".*"+markedTag+".*")) {
                     String fnameClean = fname + markedTag + ".txt";
                     //unmanagedChars.clear();
-                    replaceUnusualChars(fname ,fnameClean , unmanagedChars);
+                    replaceUnusualChars(fname ,fnameClean , unmanagedChars, begEndMarkers);
                 } else {
                     log.debug("ignored file: "+fname);
                 }
@@ -605,6 +608,9 @@ public class AdjustTextFiles {
         log.info("========= Java code ===========");
         dumpUnusualCharsJavaCode(unmanagedChars);
 
+        log.info("input&output dir was:\n "+corpusDir);
+        log.info("------------------------------------------");
+
         return true;
     }
 
@@ -613,7 +619,7 @@ public class AdjustTextFiles {
 
         System.out.println("Working Directory = " +  System.getProperty("user.dir"));
         // acronymEtc = initNonEndTokens();
-        replaceUnusualCharsAllFiles();
+        replaceUnusualCharsAllFiles(false);
     }
 
 
