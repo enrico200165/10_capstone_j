@@ -28,6 +28,11 @@ public class AdjustTextFilesTest {
         String es = AdjustTextFiles.endStartM(null);
 
         // --- temp - test here things not working
+        line = "\" moved on.\" ";
+
+        expected = s+" moved on"+e;
+        ret = AdjustTextFiles.addBeginEndMarkers(line);
+        assertEquals(expected, ret);
         // --- end temp
 
         line = "";

@@ -338,20 +338,19 @@ public class AdjustTextFiles {
         BufferedReader in = null;
         unsualCharsFound.clear();
         log.info("processing files: \nin:  "+fpathIn+" \nout: "+fpathOut);
+        String lineOriginal = ""; String lineReplaced = ""; long i = 0;
         try {
             writer = new OutputStreamWriter(new FileOutputStream(fpathOut), StandardCharsets.UTF_8);
             fileDir = new File(fpathIn);
             in = new BufferedReader(new InputStreamReader(new FileInputStream(fileDir), "UTF8"));
-            String lineOriginal;
             int maxlung = 0;
-            long i = 0;
+            i = 0;
             while ((lineOriginal = in.readLine()) != null) {
                 i++;
-                if ((i % 5000) == 0)
-                    log.debug("process line: "+i+" \""+lineOriginal.substring(
+                if ((i % 10000) == 0)
+                    log.info("process line: "+i+" \""+lineOriginal.substring(
                             0,Math.min(23, lineOriginal.length()))+"...\"");
-
-                String lineReplaced = lineOriginal;
+                lineReplaced = lineOriginal;
                 // https://notepad-plus-plus.org/community/topic/14812/how-to-search-for-unknown-3-digit-characters-with-black-background/2
                 lineReplaced = lineReplaced.replaceAll(
                         "(?!\\r|\\n)[\\x00-\\x1f\\x80-\\x9f]","");
@@ -359,15 +358,17 @@ public class AdjustTextFiles {
                 if (begEndMarkers)
                     lineReplaced = addBeginEndMarkers(lineReplaced);
                 writer.write(lineReplaced+ System.lineSeparator());
-                log.info("\nO: "+ lineOriginal+"\nR: "+lineReplaced+"\n");
             }
             log.info("read nr lines: " + i + " max len " + maxlung);
         } catch (UnsupportedEncodingException e) {
             log.error(e.getMessage());
+            log.info("line nr: "+i+" \nO:       "+ lineOriginal+"\nR: "+lineReplaced+"\n");
         } catch (IOException e) {
             log.error(e.getMessage());
+            log.info("line nr: "+i+" \nO:       "+ lineOriginal+"\nR: "+lineReplaced+"\n");
         } catch (Exception e) {
             log.error(e.getMessage());
+            log.info("line nr: "+i+" \nO:       "+ lineOriginal+"\nR: "+lineReplaced+"\n");
         } finally {
             try {
                 in.close();
@@ -530,7 +531,7 @@ public class AdjustTextFiles {
                             afterLastMatch = i+1;
                             continue;
                         } else {
-                            log.info("recognized as acronym or similar: "+thisWord);
+                            log.debug("recognized as acronym or similar: "+thisWord);
                         }
                     }
                 }
@@ -551,7 +552,11 @@ public class AdjustTextFiles {
         // manage the last chunk, that might end with . Sr..
         String lastWord = chuncksTmpStore.get(i);
         String lastWordTokens[] = chuncksTmpStore.get(i).split("[\\s]");
-        String lastWordLastChunk = lastWordTokens[lastWordTokens.length-1];
+        String lastWordLastChunk;
+        if (lastWordTokens.length >= 1)
+            lastWordLastChunk = lastWordTokens[lastWordTokens.length-1];
+        else
+            lastWordLastChunk = "";
 
         if (!isItMark(lastChar(lastWordLastChunk))
         && !lastWordLastChunk.matches(endM(c)+"[\\s]*")) {
@@ -632,7 +637,7 @@ public class AdjustTextFiles {
 
         System.out.println("Working Directory = " +  System.getProperty("user.dir"));
         // acronymEtc = initNonEndTokens();
-        replaceUnusualCharsAllFiles(true);
+        replaceUnusualCharsAllFiles(false);
     }
 
 
